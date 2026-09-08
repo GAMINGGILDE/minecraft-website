@@ -24,14 +24,9 @@ export interface LiveDataThresholds {
   maxCacheAgeMs: number;
 }
 
-export type LiveWidgetThresholdKey =
-  'mc-online' | 'discord-online' | 'discord-members' | 'stats-kpi';
+export type LiveWidgetThresholdKey = 'discord-online' | 'discord-members' | 'stats-kpi';
 
 export const LIVE_WIDGET_THRESHOLDS: Record<LiveWidgetThresholdKey, LiveDataThresholds> = {
-  'mc-online': {
-    staleAfterMs: 60_000,
-    maxCacheAgeMs: 30 * 60_000,
-  },
   'discord-online': {
     staleAfterMs: 60_000,
     maxCacheAgeMs: 30 * 60_000,

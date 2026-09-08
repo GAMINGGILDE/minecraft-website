@@ -1,21 +1,6 @@
-import { readBrowserAppConfig } from '../app-config';
-
-interface PlayerEntry {
-  uuid?: string;
-  name?: string;
-}
-
-interface ServerStatus {
-  online?: boolean;
-  players?: {
-    online?: number;
-    list?: PlayerEntry[];
-  };
-}
-
-const POLL_MS = 12_000;
-const FETCH_TIMEOUT_MS = 8_000;
-const POLL_RESUME_JITTER_MS = 750;
+import type { LiveDataState } from '../../lib/live/types';
+import type { MinecraftStatusSnapshot } from '../../lib/minecraft/status';
+import { formatLastUpdatedLabel } from '../../lib/live/lastUpdated';
 
 const qs = <T extends Element>(sel: string, root: ParentNode = document): T | null =>
   root.querySelector<T>(sel);
@@ -37,18 +22,23 @@ const setMountMessage = (mount: HTMLElement, message: string): void => {
   mount.replaceChildren(p);
 };
 
-function renderPlayers(data: ServerStatus): void {
+function renderPlayers(data: MinecraftStatusSnapshot): void {
   const mount = qs<HTMLElement>('#player-list');
   if (!mount) return;
 
-  const hasPlayers =
-    data.online &&
-    (data.players?.online ?? 0) > 0 &&
-    Array.isArray(data.players?.list) &&
-    data.players.list.length > 0;
-
-  if (!hasPlayers) {
+  if (!data.online) {
+    setMountMessage(mount, 'Server derzeit offline.');
+    return;
+  }
+  if (data.players.online === 0) {
     setMountMessage(mount, 'Keine Spieler online.');
+    return;
+  }
+  if (!data.players.list?.length) {
+    setMountMessage(
+      mount,
+      `${data.players.online} Spieler online. Spielernamen derzeit nicht verfügbar.`,
+    );
     return;
   }
 
@@ -58,7 +48,10 @@ function renderPlayers(data: ServerStatus): void {
 
   const label = document.createElement('div');
   label.className = 'text-xs font-medium text-muted mr-2';
-  label.textContent = 'Spieler online:';
+  label.textContent =
+    players.length < data.players.online
+      ? `Spieler online (${players.length} von ${data.players.online} Namen verfügbar):`
+      : 'Spieler online:';
   container.appendChild(label);
 
   players.forEach((player) => {
@@ -109,101 +102,22 @@ function renderPlayers(data: ServerStatus): void {
   mount.replaceChildren(container);
 }
 
-export function initHomePlayers(): () => void {
-  const config = readBrowserAppConfig({});
-  let destroyed = false;
-  let isFetchInFlight = false;
-  let pollTimer: number | null = null;
-  let resumeTimer: number | null = null;
-  let fetchController: AbortController | null = null;
-
-  const fetchPlayers = async (): Promise<void> => {
-    const mount = qs<HTMLElement>('#player-list');
-    if (!mount) return;
-    if (isFetchInFlight) return;
-    if (destroyed) return;
-
-    isFetchInFlight = true;
-    const ip = config.serverIp;
-    if (!ip) {
-      setMountMessage(mount, 'Server-IP aktuell nicht verfügbar.');
-      isFetchInFlight = false;
-      return;
-    }
-    const controller = new AbortController();
-    fetchController = controller;
-    const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    try {
-      const url = `https://api.mcsrvstat.us/3/${encodeURIComponent(ip)}`;
-      const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = (await response.json()) as ServerStatus;
-      if (!destroyed) renderPlayers(data);
-    } catch (err) {
-      const isAbort = err instanceof DOMException && err.name === 'AbortError';
-      if (!isAbort) console.warn('fetchPlayers Fehler:', err);
-      if (!destroyed) setMountMessage(mount, 'Spieleranzeige aktuell nicht verfügbar.');
-    } finally {
-      window.clearTimeout(timeoutId);
-      if (fetchController === controller) {
-        fetchController = null;
-      }
-      isFetchInFlight = false;
-    }
-  };
-
-  const clearPollTimer = (): void => {
-    if (pollTimer != null) {
-      window.clearTimeout(pollTimer);
-      pollTimer = null;
-    }
-  };
-
-  const clearResumeTimer = (): void => {
-    if (resumeTimer != null) {
-      window.clearTimeout(resumeTimer);
-      resumeTimer = null;
-    }
-  };
-
-  const scheduleNextPoll = (delayMs = POLL_MS): void => {
-    if (destroyed || document.visibilityState !== 'visible') return;
-    clearPollTimer();
-    pollTimer = window.setTimeout(() => {
-      void fetchPlayers();
-      scheduleNextPoll(POLL_MS);
-    }, delayMs);
-  };
-
-  const onVisibilityChange = (): void => {
-    if (document.visibilityState !== 'visible') {
-      clearPollTimer();
-      clearResumeTimer();
-      fetchController?.abort();
-      return;
-    }
-
-    const jitterMs = Math.floor(Math.random() * POLL_RESUME_JITTER_MS);
-    clearResumeTimer();
-    resumeTimer = window.setTimeout(() => {
-      void fetchPlayers();
-      scheduleNextPoll(POLL_MS);
-    }, jitterMs);
-  };
-
-  if (document.visibilityState === 'visible') {
-    void fetchPlayers();
-    scheduleNextPoll(POLL_MS);
+export function renderHomePlayers(state: LiveDataState<MinecraftStatusSnapshot>): void {
+  const mount = qs<HTMLElement>('#player-list');
+  if (!mount) return;
+  mount.dataset.liveState = state.status;
+  if (!state.data) {
+    setMountMessage(
+      mount,
+      state.status === 'loading' ? 'Lade Spieler...' : 'Spieleranzeige aktuell nicht verfügbar.',
+    );
+    return;
   }
-  document.addEventListener('visibilitychange', onVisibilityChange);
-
-  return () => {
-    destroyed = true;
-    clearPollTimer();
-    clearResumeTimer();
-    document.removeEventListener('visibilitychange', onVisibilityChange);
-    fetchController?.abort();
-  };
+  renderPlayers(state.data);
+  if (state.status === 'stale') {
+    const note = document.createElement('p');
+    note.className = 'mt-3 text-xs text-muted';
+    note.textContent = `Letzter bekannter Stand. ${formatLastUpdatedLabel(state.data.updatedAt)}.`;
+    mount.appendChild(note);
+  }
 }

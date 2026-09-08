@@ -1,3 +1,5 @@
+import { createMinecraftStatusController } from './minecraft-status';
+import { renderHomePlayers } from '../home/players';
 import type { Qsa } from './dom';
 import {
   LIVE_WIDGET_THRESHOLDS,
@@ -46,13 +48,6 @@ interface DiscordInviteResponse {
   approximate_member_count?: number;
 }
 
-interface MinecraftStatusResponse {
-  online?: boolean;
-  players?: {
-    online?: number;
-  };
-}
-
 interface LiveTileRefs {
   roots: HTMLElement[];
   notes: HTMLElement[];
@@ -81,9 +76,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isDiscordWidgetResponse = (value: unknown): value is DiscordWidgetResponse => isRecord(value);
 
 const isDiscordInviteResponse = (value: unknown): value is DiscordInviteResponse => isRecord(value);
-
-const isMinecraftStatusResponse = (value: unknown): value is MinecraftStatusResponse =>
-  isRecord(value);
 
 const toLiveError = (error: FetchJsonError): LiveDataError => ({
   kind: error.kind,
@@ -315,66 +307,6 @@ export const initLiveCounters = ({
     };
   };
 
-  const fetchMinecraftOnlinePlayers = async (): Promise<LiveDataState<string>> => {
-    const ip = config.serverIp;
-    if (!ip) {
-      const fetchedAt = Date.now();
-      return {
-        status: 'error',
-        fetchedAt,
-        error: {
-          kind: 'invalid',
-          message: 'Server-IP fehlt.',
-        },
-      };
-    }
-
-    const apiUrl = `https://api.mcsrvstat.us/3/${encodeURIComponent(ip)}`;
-    const result = await fetchLiveJson<MinecraftStatusResponse>(apiUrl, {
-      cache: 'no-store',
-      timeoutMs: LIVE_FETCH_TIMEOUT_MS,
-      requiredKeys: ['online'],
-      validate: isMinecraftStatusResponse,
-    });
-
-    if (!result.ok) {
-      return {
-        status: 'error',
-        fetchedAt: result.fetchedAt,
-        error: toLiveError(result.error),
-      };
-    }
-
-    if (result.data.online === false) {
-      return {
-        status: 'error',
-        updatedAt: result.fetchedAt,
-        fetchedAt: result.fetchedAt,
-        error: {
-          kind: 'offline',
-          message: LIVE_COPY_DE.error_offline,
-        },
-      };
-    }
-
-    const count = toCounterNumber(result.data.players?.online);
-    if (count != null) {
-      return {
-        status: count > 0 ? 'ok' : 'empty',
-        data: String(count),
-        updatedAt: result.fetchedAt,
-        fetchedAt: result.fetchedAt,
-      };
-    }
-
-    return {
-      status: 'empty',
-      data: '0',
-      updatedAt: result.fetchedAt,
-      fetchedAt: result.fetchedAt,
-    };
-  };
-
   const discordTargets = qsa<HTMLElement>('[data-discord-online]');
   const discordMemberTargets = qsa<HTMLElement>('[data-discord-members]');
   const mcTargets = qsa<HTMLElement>('[data-mc-online]');
@@ -418,13 +350,6 @@ export const initLiveCounters = ({
       format: formatInt,
       errorValue: UNKNOWN_FALLBACK,
     },
-    {
-      key: 'mc-online',
-      targets: mcTargets,
-      fetcher: fetchMinecraftOnlinePlayers,
-      thresholds: LIVE_WIDGET_THRESHOLDS['mc-online'],
-      errorValue: LIVE_ERROR_VALUE,
-    },
   ];
 
   const counterDefinitionsByKey = new Map<LiveCounterKey, CounterDefinition>(
@@ -432,7 +357,7 @@ export const initLiveCounters = ({
   );
 
   const hasLiveTargets = counterDefinitions.some((definition) => definition.targets.length > 0);
-  if (!hasLiveTargets) return () => {};
+  if (!hasLiveTargets && !mcTargets.length) return () => {};
 
   let isDisposed = false;
   const cleanupFns: Array<() => void> = [];
@@ -786,6 +711,10 @@ export const initLiveCounters = ({
 
   const revalidate = (key: LiveCounterKey, options?: { force?: boolean }): void => {
     if (isDisposed) return;
+    if (key === 'mc-online') {
+      minecraftStatus?.refresh();
+      return;
+    }
     const definition = counterDefinitionsByKey.get(key);
     if (!definition) return;
 
@@ -847,6 +776,7 @@ export const initLiveCounters = ({
   };
 
   const refreshCounters = (options?: { onlyStale?: boolean }): void => {
+    minecraftStatus?.refresh();
     counterDefinitions.forEach((definition) => {
       if (options?.onlyStale && !shouldRevalidateOnResume(definition)) return;
       revalidate(definition.key);
@@ -938,6 +868,23 @@ export const initLiveCounters = ({
     return cleanup;
   };
 
+  const minecraftStatus = mcTargets.length
+    ? createMinecraftStatusController({
+        onState: (state) => {
+          renderHomePlayers(state);
+          const offline = state.data?.online === false;
+          const counterState: LiveDataState<string> = {
+            ...state,
+            data: state.data ? String(state.data.players.online) : undefined,
+            error: offline ? { kind: 'offline' } : state.error,
+          };
+          updateRateLimitWindow('mc-online', counterState, counterState.fetchedAt ?? Date.now());
+          applyCounterState({ key: 'mc-online', targets: mcTargets, state: counterState });
+        },
+        onBusy: (busy) => setLiveTileRetryBusy('mc-online', busy),
+      })
+    : null;
+
   counterDefinitions.forEach((definition) => {
     primeCounter(definition);
   });
@@ -969,6 +916,7 @@ export const initLiveCounters = ({
   return () => {
     isDisposed = true;
     stopIdleBootstrap();
+    minecraftStatus?.dispose();
 
     if (liveNotesInterval != null) {
       window.clearInterval(liveNotesInterval);

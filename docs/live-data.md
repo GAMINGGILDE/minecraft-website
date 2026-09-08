@@ -4,12 +4,53 @@ Diese Mini-Doku erklärt in 2-3 Minuten, wie Live-Daten im Projekt funktionieren
 
 ## 1) Schnellüberblick
 
-Es gibt zwei relevante Live-Daten-Pfade:
+Es gibt drei relevante Live-Daten-Pfade:
 
-1. Home Live Counter (`src/scripts/app/live-counters.ts`)
-2. Statistik-KPI Summary (`src/features/stats/hooks/useStatsData.ts`)
+1. Minecraft-Status (`src/scripts/app/minecraft-status.ts`)
+2. Discord Live Counter (`src/scripts/app/live-counters.ts`)
+3. Statistik-KPI Summary (`src/features/stats/hooks/useStatsData.ts`)
 
-Beide nutzen das gemeinsame Cache-Modul `src/lib/live/cache.ts` und gemeinsame Live-States aus `src/lib/live/types.ts`.
+Discord und Statistik nutzen das Cache-Modul `src/lib/live/cache.ts`. Alle drei nutzen die Live-States aus `src/lib/live/types.ts`.
+
+### Minecraft-Status für alle Besucher
+
+`GET /api/minecraft-status/` (auch `HEAD`) läuft im vorhandenen Cloudflare-Worker,
+unabhängig von der Statistik-Datenbank. Der feste Minecraft-Server kommt aus
+`minecraftGilde.serverIp`; URL-Parameter ändern das Abfrageziel nicht.
+
+- Quelle: `https://api.mcsrvstat.us/3/<serverIp>`, Timeout 6,5 Sekunden,
+  maximal 256 KiB Antwort, identifizierender User-Agent.
+- Antwort: `{ data: { online, players: { online, list }, updatedAt, expiresAt }, stale, retryAfterMs? }`.
+  Zeitstempel sind Millisekunden seit Unix-Epoch. `list: null` bedeutet, dass Namen fehlen.
+- `updatedAt` und `expiresAt` übernehmen `debug.cachetime` und `debug.cacheexpire`
+  der Quelle. Die Frische beträgt höchstens fünf Minuten; zusätzliche volle fünf Minuten
+  werden nicht auf einen bereits alten Quellstand aufgeschlagen.
+- `caches.default` speichert den letzten Stand bis zu 30 Minuten ab `updatedAt`.
+  Besucher desselben Cloudflare-Rechenzentrums teilen diesen Cache. Er ist kein
+  dauerhaft gespeicherter, weltweit synchroner Datenbestand.
+- Bei Fehlern wird ein noch nutzbarer Stand mit `stale: true` und unverändertem
+  Zeitstempel ausgeliefert. Ohne nutzbare Daten antwortet der Endpunkt mit 502,
+  bei Timeout mit 504, bei Rate-Limit mit 429.
+- Fehler lösen eine gemeinsam gespeicherte Pause von mindestens 30 Sekunden aus;
+  ein längeres `Retry-After` der Quelle wird respektiert. Bestätigtes `online: false`
+  ersetzt einen früheren Online-Stand und ist kein Transportfehler.
+- Der interne Cache hält Daten länger als ihre Frischefrist. Fallback und Alterung
+  werden ausdrücklich im Worker geprüft; die Browser-Antwort hat `Cache-Control: no-store`.
+- `X-Minecraft-Cache` zeigt `HIT`, `MISS` oder `FALLBACK`. Strukturierte Warnungen
+  protokollieren Quell- und Cache-Fehler ohne Spielernamen oder vollständige Antworten.
+
+Im Browser steuert ein gemeinsamer Controller Zahl, Status und Namensliste.
+Er lädt nach Ablauf der Quelldaten erneut, pausiert im unsichtbaren Tab und speichert
+den letzten Stand optional unter `mg:minecraft-status:v1` in `localStorage`.
+Bei Fehlern bleiben Zahl und Namen mit einem Hinweis erhalten, höchstens 30 Minuten.
+Ein Retry startet nach mindestens 30 Sekunden tatsächlich eine neue Anfrage;
+ein Klick während der Pause setzt die Anzeige nicht auf einen falschen Ladezustand.
+Der Browser-Timeout beträgt zehn Sekunden und gibt dem Worker Zeit für seinen Fallback.
+Teilweise oder fehlende Namen, null Spieler und ein Offline-Server werden getrennt angezeigt.
+
+Implementierung: `src/pages/api/minecraft-status.ts`,
+`src/lib/http/server/minecraftStatus.ts`, `src/lib/minecraft/status.ts`,
+`src/scripts/app/minecraft-status.ts` und `src/scripts/home/players.ts`.
 
 ## 2) State Model
 
@@ -48,7 +89,6 @@ Alterung:
 
 Standardwerte pro Widget (`LIVE_WIDGET_THRESHOLDS` in `src/lib/live/types.ts`):
 
-- `mc-online`: stale nach 60s, max 30min
 - `discord-online`: stale nach 60s, max 30min
 - `discord-members`: stale nach 5min, max 60min
 - `stats-kpi`: stale nach 5min, max 60min
@@ -62,7 +102,7 @@ Fallback-Verhalten:
 
 ## 4) Retry- und Rate-Limit-Handling
 
-### Home Live Counter (`src/scripts/app/live-counters.ts`)
+### Discord Live Counter (`src/scripts/app/live-counters.ts`)
 
 - Timeout je Request: `6_500ms` (via `src/lib/live/fetchJson.ts`).
 - Automatischer Retry bei `network`/`timeout`:
@@ -90,7 +130,7 @@ Gelesen werden sie in `src/scripts/app-config.ts`.
 
 Relevante Felder:
 
-- `serverIp` -> Minecraft Status API
+- `serverIp` -> Minecraft Status API (serverseitig, siehe oben)
 - `discordGuildId` -> Discord Widget API
 - `discordInviteCode` -> Discord Invite API
 

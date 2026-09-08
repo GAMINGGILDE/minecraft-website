@@ -210,7 +210,7 @@ test('Live-Section wechselt von loading auf ok mit API-Mocks', async ({ page }) 
     });
   });
 
-  await page.route('**/api.mcsrvstat.us/3/*', async (route) => {
+  await page.route('**/api/minecraft-status/', async (route) => {
     await new Promise((resolve) => {
       setTimeout(resolve, 120);
     });
@@ -218,11 +218,16 @@ test('Live-Section wechselt von loading auf ok mit API-Mocks', async ({ page }) 
       status: 200,
       contentType: 'application/json; charset=utf-8',
       body: JSON.stringify({
-        online: true,
-        players: {
-          online: 5,
-          list: [{ name: 'Steve', uuid: '00000000-0000-0000-0000-000000000001' }],
+        data: {
+          online: true,
+          players: {
+            online: 5,
+            list: [{ name: 'Steve', uuid: '00000000-0000-0000-0000-000000000001' }],
+          },
+          updatedAt: Date.now(),
+          expiresAt: Date.now() + 300_000,
         },
+        stale: false,
       }),
     });
   });
@@ -239,6 +244,8 @@ test('Live-Section wechselt von loading auf ok mit API-Mocks', async ({ page }) 
   await liveHeading.click();
   await expect(mcTile).toHaveAttribute('data-live-state', 'ok');
   await expect(mcCounter).toHaveText('5');
+  await expect(page.locator('#player-list')).toContainText('Steve');
+  await expect(page.locator('#player-list')).toContainText('1 von 5 Namen');
 });
 
 test('Neu laden triggert Revalidate und faellt bei Fetch-Fehler auf stale zurueck', async ({
@@ -282,16 +289,21 @@ test('Neu laden triggert Revalidate und faellt bei Fetch-Fehler auf stale zuruec
     });
   });
 
-  await page.route('**/api.mcsrvstat.us/3/*', async (route) => {
+  await page.route('**/api/minecraft-status/', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json; charset=utf-8',
       body: JSON.stringify({
-        online: true,
-        players: {
-          online: 3,
-          list: [],
+        data: {
+          online: true,
+          players: {
+            online: 3,
+            list: [],
+          },
+          updatedAt: Date.now(),
+          expiresAt: Date.now() + 300_000,
         },
+        stale: false,
       }),
     });
   });
