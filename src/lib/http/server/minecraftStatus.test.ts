@@ -11,11 +11,18 @@ const payload = (extra = {}) => ({
 });
 
 function memoryCache() {
-  const entries = new Map<string, Response>();
+  const entries = new Map<string, { response: Response; expiresAt: number }>();
   return {
-    match: vi.fn(async (key: RequestInfo | URL) => entries.get(new Request(key).url)?.clone()),
+    match: vi.fn(async (key: RequestInfo | URL) => {
+      const entry = entries.get(new Request(key).url);
+      return entry && entry.expiresAt > Date.now() ? entry.response.clone() : undefined;
+    }),
     put: vi.fn(async (key: RequestInfo | URL, response: Response) => {
-      entries.set(new Request(key).url, response.clone());
+      const ttl = Number(response.headers.get('Cache-Control')?.match(/max-age=(\d+)/)?.[1]);
+      entries.set(new Request(key).url, {
+        response: response.clone(),
+        expiresAt: Date.now() + ttl * 1_000,
+      });
     }),
   };
 }
@@ -104,21 +111,53 @@ describe('Minecraft-Status im Worker', () => {
     });
   });
 
-  it('respektiert Retry-After auch ohne vorherigen Erfolg', async () => {
+  it('begrenzt den Backoff auch ohne Fallback auf zwei Minuten und setzt ihn nach Erfolg zurueck', async () => {
     const cache = memoryCache();
-    const fetcher = vi.fn(
-      async () => new Response(null, { status: 429, headers: { 'Retry-After': '120' } }),
-    );
+    const fetcher = vi.fn(async () => new Response(null, { status: 503 }));
     vi.stubGlobal('fetch', fetcher);
-    expect((await handleMinecraftStatus(request(), cache)).status).toBe(429);
-    vi.setSystemTime(now + 60_000);
-    const response = await handleMinecraftStatus(request(), cache);
-    expect(response.headers.get('Retry-After')).toBe('60');
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    vi.setSystemTime(now + 120_000);
-    await handleMinecraftStatus(request(), cache);
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    let attempts = 0;
+    for (const delay of [30, 60, 120, 120]) {
+      const failed = await handleMinecraftStatus(request(), cache);
+      expect(failed.status).toBe(502);
+      expect(failed.headers.get('Retry-After')).toBe(String(delay));
+      attempts += 1;
+      expect(fetcher).toHaveBeenCalledTimes(attempts);
+      vi.setSystemTime(Date.now() + delay * 1_000 - 1);
+      const cached = await handleMinecraftStatus(request(), cache);
+      expect(cached.headers.get('X-Minecraft-Cache')).toBe('HIT');
+      expect(cached.headers.get('Retry-After')).toBe('1');
+      expect(fetcher).toHaveBeenCalledTimes(attempts);
+      vi.setSystemTime(Date.now() + 1);
+    }
+
+    fetcher.mockResolvedValueOnce(Response.json(payload({ debug: undefined })));
+    expect((await handleMinecraftStatus(request(), cache)).status).toBe(200);
+    vi.setSystemTime(Date.now() + 300_000);
+    const failedAgain = await handleMinecraftStatus(request(), cache);
+    expect(await failedAgain.json()).toMatchObject({ stale: true, retryAfterMs: 30_000 });
+    expect(fetcher).toHaveBeenCalledTimes(6);
   });
+
+  it.each([429, 503])(
+    'respektiert laengeres Retry-After ohne vorherigen Erfolg bei HTTP %s',
+    async (status) => {
+      const cache = memoryCache();
+      const fetcher = vi.fn(
+        async () => new Response(null, { status, headers: { 'Retry-After': '600' } }),
+      );
+      vi.stubGlobal('fetch', fetcher);
+      expect((await handleMinecraftStatus(request(), cache)).status).toBe(
+        status === 429 ? 429 : 502,
+      );
+      vi.setSystemTime(now + 60_000);
+      const response = await handleMinecraftStatus(request(), cache);
+      expect(response.headers.get('Retry-After')).toBe('540');
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      vi.setSystemTime(now + 600_000);
+      await handleMinecraftStatus(request(), cache);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it.each([{}, { online: true }, { online: true, players: { online: null } }])(
     'behandelt ungueltige Daten als Fehler: %j',

@@ -1,5 +1,6 @@
 import { minecraftGilde } from '../../../config/minecraftGilde';
 import {
+  getMinecraftStatusRetryMs,
   isMinecraftStatusSnapshot,
   isUsableMinecraftStatus,
   MINECRAFT_STATUS_MAX_AGE_MS,
@@ -17,6 +18,7 @@ interface CacheEntry {
   data?: MinecraftStatusSnapshot;
   retryAt: number;
   errorStatus?: number;
+  failures?: number;
 }
 
 type StatusCache = Pick<Cache, 'match' | 'put'>;
@@ -38,6 +40,10 @@ async function readCache(cache: StatusCache | undefined, key: Request): Promise<
       !('retryAt' in entry) ||
       typeof entry.retryAt !== 'number' ||
       !Number.isFinite(entry.retryAt) ||
+      ('failures' in entry &&
+        (typeof entry.failures !== 'number' ||
+          !Number.isSafeInteger(entry.failures) ||
+          entry.failures < 0)) ||
       ('data' in entry && !isMinecraftStatusSnapshot(entry.data)) ||
       ('errorStatus' in entry && ![429, 502, 504].includes(Number(entry.errorStatus)))
     )
@@ -55,8 +61,9 @@ async function writeCache(
   entry: CacheEntry,
 ): Promise<void> {
   if (!cache) return;
+  // Die Fehlerstufe muss auch ohne Fallback-Daten bis nach der Retry-Pause erhalten bleiben.
   const retainUntil = Math.max(
-    entry.retryAt,
+    entry.retryAt + (entry.failures ? MINECRAFT_STATUS_MAX_AGE_MS : 0),
     (entry.data?.updatedAt ?? 0) + MINECRAFT_STATUS_MAX_AGE_MS,
   );
   const ttl = Math.max(1, Math.ceil((retainUntil - Date.now()) / 1_000));
@@ -135,7 +142,8 @@ export async function handleMinecraftStatus(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   let errorStatus = 502;
-  let retryMs = MINECRAFT_STATUS_RETRY_MS;
+  const failures = Math.min(3, (cached?.failures ?? 0) + 1);
+  let retryMs = getMinecraftStatusRetryMs(failures);
   let next: CacheEntry;
   try {
     const response = await fetch(
@@ -160,7 +168,7 @@ export async function handleMinecraftStatus(
   } catch {
     if (controller.signal.aborted) errorStatus = 504;
     const data = cached?.data && isUsableMinecraftStatus(cached.data) ? cached.data : undefined;
-    next = { ...(data ? { data } : {}), errorStatus, retryAt: Date.now() + retryMs };
+    next = { ...(data ? { data } : {}), errorStatus, failures, retryAt: Date.now() + retryMs };
     console.warn(
       JSON.stringify({
         event: 'minecraft_status_upstream_failed',

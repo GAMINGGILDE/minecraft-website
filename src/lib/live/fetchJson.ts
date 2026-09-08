@@ -94,6 +94,7 @@ const toHttpErrorResult = <T>(response: Response, fetchedAt: number): FetchJsonR
       kind: 'network',
       message: `${LIVE_COPY_DE.error_network} (HTTP ${response.status}).`,
       status: response.status,
+      retryAfterMs: parseRetryAfterMs(response.headers.get('retry-after')),
     },
     response.status,
   );

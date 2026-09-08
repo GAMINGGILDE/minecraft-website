@@ -65,6 +65,23 @@ describe('live/fetchJson', () => {
     }
   });
 
+  it.each([502, 503, 504])(
+    'uebernimmt Retry-After bei HTTP %s als Netzwerkfehler',
+    async (status) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(null, { status, headers: { 'Retry-After': '600' } })),
+      );
+
+      const result = await fetchLiveJson('https://example.test/unavailable');
+
+      expect(result).toMatchObject({
+        ok: false,
+        error: { kind: 'network', status, retryAfterMs: 600_000 },
+      });
+    },
+  );
+
   it('classifies timeout errors', async () => {
     const fetchMock = vi.fn(
       async (_url: string, init?: RequestInit) =>

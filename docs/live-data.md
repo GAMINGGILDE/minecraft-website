@@ -31,8 +31,11 @@ unabhängig von der Statistik-Datenbank. Der feste Minecraft-Server kommt aus
 - Bei Fehlern wird ein noch nutzbarer Stand mit `stale: true` und unverändertem
   Zeitstempel ausgeliefert. Ohne nutzbare Daten antwortet der Endpunkt mit 502,
   bei Timeout mit 504, bei Rate-Limit mit 429.
-- Fehler lösen eine gemeinsam gespeicherte Pause von mindestens 30 Sekunden aus;
-  ein längeres `Retry-After` der Quelle wird respektiert. Bestätigtes `online: false`
+- Aufeinanderfolgende Fehler verlängern die gemeinsam gespeicherte Pause von 30 auf
+  60 und höchstens 120 Sekunden. Ein erfolgreicher Abruf setzt die Fehlerstufe zurück;
+  Cache-Treffer erhöhen sie nicht. Die Fehlerstufe bleibt bis 30 Minuten nach Ende der
+  Pause im Cache, auch ohne nutzbare Daten. Ein längeres `Retry-After` der Quelle wird
+  respektiert. Bestätigtes `online: false`
   ersetzt einen früheren Online-Stand und ist kein Transportfehler.
 - Der interne Cache hält Daten länger als ihre Frischefrist. Fallback und Alterung
   werden ausdrücklich im Worker geprüft; die Browser-Antwort hat `Cache-Control: no-store`.
@@ -43,8 +46,11 @@ Im Browser steuert ein gemeinsamer Controller Zahl, Status und Namensliste.
 Er lädt nach Ablauf der Quelldaten erneut, pausiert im unsichtbaren Tab und speichert
 den letzten Stand optional unter `mg:minecraft-status:v1` in `localStorage`.
 Bei Fehlern bleiben Zahl und Namen mit einem Hinweis erhalten, höchstens 30 Minuten.
-Ein Retry startet nach mindestens 30 Sekunden tatsächlich eine neue Anfrage;
-ein Klick während der Pause setzt die Anzeige nicht auf einen falschen Ladezustand.
+Bei anhaltenden Fehlern oder veralteten Antworten wartet auch der Browser zunächst
+30, dann 60 und danach höchstens 120 Sekunden zwischen Wiederholungsversuchen.
+Frische Daten setzen seine Fehlerstufe zurück. Längere Wartezeiten des Workers gelten
+zusätzlich, auch bei HTTP 5xx. Ein Klick während der Pause umgeht die Wartezeit nicht
+und setzt die Anzeige nicht auf einen falschen Ladezustand.
 Der Browser-Timeout beträgt zehn Sekunden und gibt dem Worker Zeit für seinen Fallback.
 Teilweise oder fehlende Namen, null Spieler und ein Offline-Server werden getrennt angezeigt.
 

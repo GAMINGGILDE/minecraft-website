@@ -163,6 +163,55 @@ describe('Gemeinsame Minecraft-Anzeige', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it.each(['network', 'stale', 'invalid'])(
+    'verlaengert bei %s die Pausen bis zwei Minuten und setzt sie nach frischen Daten zurueck',
+    async (failure) => {
+      const fetcher = vi.fn(async () => {
+        if (failure === 'network') throw new TypeError('Netzwerk');
+        if (failure === 'invalid') return Response.json({});
+        return response(2, ['Steve'], { stale: true, retryAfterMs: 30_000 });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      await start();
+      let attempts = 1;
+      for (const delay of [30_000, 60_000, 120_000, 120_000]) {
+        document.querySelector<HTMLButtonElement>('[data-live-retry]')!.click();
+        await vi.advanceTimersByTimeAsync(delay - 1);
+        expect(fetcher).toHaveBeenCalledTimes(attempts);
+        await vi.advanceTimersByTimeAsync(1);
+        attempts += 1;
+        expect(fetcher).toHaveBeenCalledTimes(attempts);
+      }
+
+      fetcher.mockImplementationOnce(async () => response(4));
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(counter().textContent).toBe('4');
+      expect(counter().dataset.liveState).toBe('ok');
+      await vi.advanceTimersByTimeAsync(300_000);
+      expect(fetcher).toHaveBeenCalledTimes(7);
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(fetcher).toHaveBeenCalledTimes(7);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(fetcher).toHaveBeenCalledTimes(8);
+    },
+  );
+
+  it('beachtet ein laengeres Retry-After des Workers auch bei HTTP 502', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(
+        async () => new Response(null, { status: 502, headers: { 'Retry-After': '600' } }),
+      )
+      .mockImplementation(async () => response());
+    vi.stubGlobal('fetch', fetcher);
+    await start();
+    await vi.advanceTimersByTimeAsync(599_999);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(counter().dataset.liveState).toBe('ok');
+  });
+
   it('aktualisiert Zahl und Namen gemeinsam erst nach Ablauf der Quelldaten', async () => {
     const fetcher = vi
       .fn()

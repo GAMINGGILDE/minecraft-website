@@ -1,11 +1,11 @@
 import { fetchLiveJson } from '../../lib/live/fetchJson';
 import type { LiveDataError, LiveDataState } from '../../lib/live/types';
 import {
+  getMinecraftStatusRetryMs,
   isMinecraftStatusResponse,
   isMinecraftStatusSnapshot,
   isUsableMinecraftStatus,
   MINECRAFT_STATUS_MAX_AGE_MS,
-  MINECRAFT_STATUS_RETRY_MS,
   type MinecraftStatusSnapshot,
 } from '../../lib/minecraft/status';
 
@@ -20,6 +20,7 @@ export function createMinecraftStatusController(options: {
   let error: LiveDataError | undefined;
   let fetchedAt: number | undefined;
   let nextFetchAt = 0;
+  let failures = 0;
   let timer: number | undefined;
   let active: AbortController | undefined;
   let disposed = false;
@@ -98,11 +99,12 @@ export function createMinecraftStatusController(options: {
       fetchedAt = now;
       if (result.ok && isUsableMinecraftStatus(result.data.data, now)) {
         snapshot = result.data.data;
-        error = result.data.stale ? { kind: 'network' } : undefined;
-        nextFetchAt =
-          result.data.stale || snapshot.expiresAt <= now
-            ? now + Math.max(MINECRAFT_STATUS_RETRY_MS, result.data.retryAfterMs ?? 0)
-            : snapshot.expiresAt;
+        const stale = result.data.stale || snapshot.expiresAt <= now;
+        error = stale ? { kind: 'network' } : undefined;
+        failures = stale ? Math.min(3, failures + 1) : 0;
+        nextFetchAt = stale
+          ? now + Math.max(getMinecraftStatusRetryMs(failures), result.data.retryAfterMs ?? 0)
+          : snapshot.expiresAt;
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
         } catch {
@@ -110,7 +112,8 @@ export function createMinecraftStatusController(options: {
         }
       } else {
         error = result.ok ? { kind: 'invalid' } : result.error;
-        nextFetchAt = now + Math.max(MINECRAFT_STATUS_RETRY_MS, error.retryAfterMs ?? 0);
+        failures = Math.min(3, failures + 1);
+        nextFetchAt = now + Math.max(getMinecraftStatusRetryMs(failures), error.retryAfterMs ?? 0);
       }
     } finally {
       active = undefined;

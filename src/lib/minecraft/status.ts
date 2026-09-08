@@ -2,6 +2,9 @@ export const MINECRAFT_STATUS_FRESH_MS = 5 * 60_000;
 export const MINECRAFT_STATUS_MAX_AGE_MS = 30 * 60_000;
 export const MINECRAFT_STATUS_RETRY_MS = 30_000;
 
+export const getMinecraftStatusRetryMs = (failures: number): number =>
+  MINECRAFT_STATUS_RETRY_MS * 2 ** Math.min(2, Math.max(0, failures - 1));
+
 export interface MinecraftPlayer {
   name: string;
   uuid?: string;
