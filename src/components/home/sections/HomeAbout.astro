@@ -4,17 +4,16 @@ import IconButton from '../../ui/IconButton.astro';
 import HomePanel from '../HomePanel.astro';
 import HomeSection from '../HomeSection.astro';
 
-import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
+import type { GalleryImage } from '../../../lib/home/gallery';
 import { Book, ChevronLeft, ChevronRight, ScrollText } from '@lucide/astro';
 import { minecraftGilde } from '../../../config/minecraftGilde';
 
 export interface Props {
-  galleryUrls: string[];
-  galleryInitialImage: ImageMetadata;
+  galleryImages: GalleryImage[];
 }
 
-const { galleryUrls, galleryInitialImage } = Astro.props as Props;
+const { galleryImages } = Astro.props as Props;
+const galleryInitialImage = galleryImages[0];
 
 const ORGANIZATION_NAME = minecraftGilde.organization.name;
 ---
@@ -66,7 +65,7 @@ const ORGANIZATION_NAME = minecraftGilde.organization.name;
         data-gallery-interval="5200"
         data-gallery-preload-delay-default="350"
         data-gallery-preload-delay-slow="1200"
-        data-gallery-images={JSON.stringify(galleryUrls)}
+        data-gallery-images={JSON.stringify(galleryImages)}
       >
         <div class="group relative h-[340px] w-full sm:h-[380px]">
           <div
@@ -75,9 +74,9 @@ const ORGANIZATION_NAME = minecraftGilde.organization.name;
           >
           </div>
 
-          <Image
+          <img
             data-gallery-a
-            src={galleryInitialImage}
+            {...galleryInitialImage}
             alt="Impressionen vom Server - Minecraft Gilde"
             loading="lazy"
             decoding="async"
@@ -85,16 +84,16 @@ const ORGANIZATION_NAME = minecraftGilde.organization.name;
           />
 
           <noscript>
-            <Image
-              src={galleryInitialImage}
+            <img
+              {...galleryInitialImage}
               alt="Impressionen vom Server - Minecraft Gilde"
               class="absolute inset-0 h-full w-full object-cover opacity-100"
             />
           </noscript>
 
-          <Image
+          <img
             data-gallery-b
-            src={galleryInitialImage}
+            {...galleryInitialImage}
             alt=""
             aria-hidden="true"
             loading="lazy"

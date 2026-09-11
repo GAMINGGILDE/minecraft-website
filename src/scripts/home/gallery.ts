@@ -1,3 +1,5 @@
+import type { GalleryImage } from '../../lib/home/gallery';
+
 const qs = <T extends Element>(sel: string, root: ParentNode = document): T | null =>
   root.querySelector<T>(sel);
 
@@ -24,6 +26,7 @@ type GalleryElements = {
 type GalleryRuntime = {
   elements: GalleryElements;
   order: string[];
+  sources: Map<string, GalleryImage>;
   bad: Set<string>;
   intervalMs: number;
   fadeMs: number;
@@ -39,6 +42,8 @@ type GalleryRuntime = {
   idlePreloadHandle: number | null;
   pendingPreloadSrc: string | null;
   isAutoplayPaused: boolean;
+  isInViewport: boolean;
+  ready: boolean;
   isTransitioning: boolean;
   touchStartX: number | null;
   touchStartY: number | null;
@@ -71,13 +76,20 @@ const shuffleInPlace = <T>(arr: T[]): T[] => {
   return arr;
 };
 
-function parseImageList(root: HTMLElement): string[] {
+function parseImageList(root: HTMLElement): GalleryImage[] {
   const raw = root.getAttribute('data-gallery-images') || '[]';
 
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((s): s is string => typeof s === 'string' && s.length > 0);
+    return parsed.filter(
+      (image): image is GalleryImage =>
+        image &&
+        typeof image.src === 'string' &&
+        image.src.length > 0 &&
+        typeof image.srcset === 'string' &&
+        typeof image.sizes === 'string',
+    );
   } catch {
     return [];
   }
@@ -133,7 +145,16 @@ function showSingle(elements: GalleryElements): void {
   revealPlaceholder(elements.placeholder);
 }
 
-function createPreloadOk(bad: Set<string>): (src: string) => Promise<boolean> {
+function applyImageSource(el: HTMLImageElement, image: GalleryImage): void {
+  el.sizes = image.sizes;
+  el.srcset = image.srcset;
+  el.src = image.src;
+}
+
+function createPreloadOk(
+  bad: Set<string>,
+  sources: Map<string, GalleryImage>,
+): (src: string) => Promise<boolean> {
   return (src: string) =>
     new Promise((resolve) => {
       if (!src) return resolve(false);
@@ -153,7 +174,9 @@ function createPreloadOk(bad: Set<string>): (src: string) => Promise<boolean> {
       tmp.loading = 'eager';
       tmp.onload = () => finish(true);
       tmp.onerror = () => finish(false);
-      tmp.src = src;
+      const image = sources.get(src);
+      if (!image) return finish(false);
+      applyImageSource(tmp, image);
 
       if (tmp.complete) {
         finish(tmp.naturalWidth > 0);
@@ -196,6 +219,7 @@ function cancelPendingIdlePreload(runtime: GalleryRuntime): void {
 }
 
 function scheduleIdlePreload(runtime: GalleryRuntime, src: string): void {
+  if (!runtime.isInViewport || document.hidden) return;
   if (!runtime.allowIdlePreload || !src || runtime.bad.has(src) || runtime.disposed) return;
   if (
     runtime.pendingPreloadSrc === src &&
@@ -214,7 +238,7 @@ function scheduleIdlePreload(runtime: GalleryRuntime, src: string): void {
       runtime.idlePreloadHandle = null;
       const target = runtime.pendingPreloadSrc;
       runtime.pendingPreloadSrc = null;
-      if (!target || runtime.disposed || document.hidden) return;
+      if (!target || runtime.disposed || document.hidden || !runtime.isInViewport) return;
       void runtime.preloadOk(target);
     };
 
@@ -240,8 +264,10 @@ async function setSrcSafe(
   src: string,
 ): Promise<boolean> {
   const ok = await runtime.preloadOk(src);
-  if (!ok) return false;
-  el.src = src;
+  if (!ok || runtime.disposed) return false;
+  const image = runtime.sources.get(src);
+  if (!image) return false;
+  applyImageSource(el, image);
   return true;
 }
 
@@ -270,7 +296,7 @@ async function transitionTo(runtime: GalleryRuntime, targetIndex: number): Promi
   scheduleNextIdlePreload(runtime, nextIndex);
 
   if (runtime.fadeMs === 0) {
-    runtime.front.src = nextSrc;
+    applyImageSource(runtime.front, runtime.sources.get(nextSrc)!);
     runtime.index = nextIndex;
     runtime.isTransitioning = false;
     return;
@@ -292,14 +318,23 @@ async function transitionTo(runtime: GalleryRuntime, targetIndex: number): Promi
 }
 
 async function step(runtime: GalleryRuntime): Promise<void> {
-  if (runtime.disposed || runtime.isAutoplayPaused || document.hidden) return;
+  if (runtime.disposed || runtime.isAutoplayPaused || document.hidden || !runtime.isInViewport)
+    return;
   const nextIndex = findNextIndex(runtime, runtime.index, +1);
   if (nextIndex == null) return;
   void transitionTo(runtime, nextIndex);
 }
 
 function start(runtime: GalleryRuntime): void {
-  if (!runtime.autoplayAllowed || runtime.disposed) return;
+  if (
+    !runtime.autoplayAllowed ||
+    runtime.disposed ||
+    !runtime.ready ||
+    !runtime.isInViewport ||
+    runtime.isAutoplayPaused ||
+    document.hidden
+  )
+    return;
   if (runtime.timer != null) window.clearInterval(runtime.timer);
   runtime.timer = window.setInterval(() => {
     void step(runtime);
@@ -396,13 +431,17 @@ function registerInteractions(runtime: GalleryRuntime): void {
   registerEvent(runtime, document, 'visibilitychange', onVisibilityChange);
 }
 
-function createGalleryRuntime(elements: GalleryElements, order: string[]): GalleryRuntime {
+function createGalleryRuntime(elements: GalleryElements, images: GalleryImage[]): GalleryRuntime {
   const timing = resolveTiming(elements.root);
   const bad = new Set<string>();
+  const sources = new Map(images.map((image) => [image.src, image]));
+  // Das bereits im HTML geladene Startbild bleibt erhalten; nur Folgebilder werden gemischt.
+  const order = [images[0].src, ...shuffleInPlace(images.slice(1).map((image) => image.src))];
 
   return {
     elements,
     order,
+    sources,
     bad,
     intervalMs: timing.intervalMs,
     fadeMs: timing.fadeMs,
@@ -418,11 +457,13 @@ function createGalleryRuntime(elements: GalleryElements, order: string[]): Galle
     idlePreloadHandle: null,
     pendingPreloadSrc: null,
     isAutoplayPaused: !timing.autoplayAllowed,
+    isInViewport: false,
+    ready: false,
     isTransitioning: false,
     touchStartX: null,
     touchStartY: null,
     disposed: false,
-    preloadOk: createPreloadOk(bad),
+    preloadOk: createPreloadOk(bad, sources),
     cleanupFns: [],
   };
 }
@@ -448,6 +489,7 @@ async function bootGallery(runtime: GalleryRuntime): Promise<void> {
   setVisible(runtime.front, true);
   setVisible(runtime.back, false);
   revealPlaceholder(runtime.elements.placeholder);
+  runtime.ready = true;
   scheduleNextIdlePreload(runtime, runtime.index);
   start(runtime);
 }
@@ -478,9 +520,41 @@ export function initHomeGallery(): () => void {
     return () => {};
   }
 
-  const runtime = createGalleryRuntime(elements, shuffleInPlace(images.slice()));
+  const runtime = createGalleryRuntime(elements, images);
   registerInteractions(runtime);
-  void bootGallery(runtime);
+
+  if (typeof IntersectionObserver !== 'function') {
+    runtime.isInViewport = true;
+    void bootGallery(runtime);
+  } else {
+    let booted = false;
+    const nearObserver = new IntersectionObserver(
+      (entries) => {
+        if (booted || !entries.some((entry) => entry.isIntersecting)) return;
+        booted = true;
+        nearObserver.disconnect();
+        void bootGallery(runtime);
+      },
+      { rootMargin: '300px' },
+    );
+    const visibleObserver = new IntersectionObserver((entries) => {
+      runtime.isInViewport = entries.some((entry) => entry.isIntersecting);
+      if (runtime.isInViewport) {
+        start(runtime);
+        if (runtime.ready) scheduleNextIdlePreload(runtime, runtime.index);
+      } else {
+        if (runtime.timer != null) window.clearInterval(runtime.timer);
+        runtime.timer = null;
+        cancelPendingIdlePreload(runtime);
+      }
+    });
+    nearObserver.observe(root);
+    visibleObserver.observe(root);
+    runtime.cleanupFns.push(() => {
+      nearObserver.disconnect();
+      visibleObserver.disconnect();
+    });
+  }
 
   return () => {
     cleanupRuntime(runtime);

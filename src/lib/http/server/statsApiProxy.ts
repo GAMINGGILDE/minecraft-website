@@ -4,6 +4,7 @@ import { gunzipSync } from 'node:zlib';
 import { env as workerEnv } from 'cloudflare:workers';
 import mysql from 'mysql2/promise';
 import type { Connection, ConnectionOptions, RowDataPacket } from 'mysql2/promise';
+import { readBoundedText } from './readBoundedText';
 import {
   BAN_STATUS_RATE_LIMIT,
   consumeDefaultFixedWindowRateLimit,
@@ -110,6 +111,8 @@ const mojangMemoryCache = new Map<string, MojangCacheEntry>();
 
 const API_MAX_LIMIT = 100;
 const API_MAX_SEARCH = 25;
+const PROFILE_FETCH_BUDGET_MS = 9_000;
+const PROFILE_MAX_RESPONSE_BYTES = 256 * 1024;
 
 const PROFILE_CACHE_FRESH_SECONDS = 6 * 3600;
 const PROFILE_CACHE_NEGATIVE_SECONDS = 10 * 60;
@@ -363,7 +366,7 @@ function applyDivisor(raw: number, divisor: number | null): number {
 function withApiHeaders(
   source: Response,
   options: {
-    cacheStatus: 'HIT' | 'MISS' | 'BYPASS';
+    cacheStatus: 'HIT' | 'MISS' | 'BYPASS' | 'STALE';
   },
 ): Response {
   const headers = new Headers(source.headers);
@@ -391,15 +394,19 @@ function withoutBody(response: Response): Response {
 }
 
 function maybeNotModified(request: Request, response: Response): Response | null {
+  if (response.status !== 200) return null;
   const etag = response.headers.get('ETag');
   const lastModified = response.headers.get('Last-Modified');
   const ifNoneMatch = request.headers.get('If-None-Match');
   const ifModifiedSince = request.headers.get('If-Modified-Since');
 
   const etagMatches =
-    etag !== null &&
     ifNoneMatch !== null &&
-    ifNoneMatch.split(',').some((part) => part.trim() === etag);
+    (ifNoneMatch.trim() === '*' ||
+      (etag !== null &&
+        (ifNoneMatch.match(/(?:W\/)?"[^"]*"/g) ?? []).some(
+          (part) => part.replace(/^W\//, '') === etag.replace(/^W\//, ''),
+        )));
 
   const modifiedSinceMatches =
     lastModified !== null &&
@@ -408,7 +415,8 @@ function maybeNotModified(request: Request, response: Response): Response | null
     Number.isFinite(Date.parse(ifModifiedSince)) &&
     Date.parse(ifModifiedSince) >= Date.parse(lastModified);
 
-  if (!etagMatches && !modifiedSinceMatches) {
+  // If-None-Match hat auch bei einem abweichenden ETag Vorrang vor dem Datum.
+  if (!(ifNoneMatch !== null ? etagMatches : modifiedSinceMatches)) {
     return null;
   }
 
@@ -576,6 +584,7 @@ async function createDbConnection(env: RuntimeEnv): Promise<Connection> {
     bigNumberStrings: false,
     dateStrings: true,
     disableEval: true,
+    connectTimeout: 5_000,
   };
 
   return mysql.createConnection(options);
@@ -586,7 +595,7 @@ async function queryRows<T extends RowDataPacket>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  const [rows] = await connection.query<T[]>(sql, params);
+  const [rows] = await connection.query<T[]>({ sql, timeout: 8_000 }, params);
   return rows;
 }
 
@@ -627,7 +636,30 @@ function emptyActiveRun(): ActiveRun {
   };
 }
 
-async function loadMetricDefs(connection: Connection): Promise<Record<string, MetricDef>> {
+async function loadMetricDefs(route: DataRouteContext): Promise<Record<string, MetricDef>> {
+  const cache = route.active.runId > 0 ? getEdgeCache() : null;
+  const key = new Request(
+    new URL(`/__cache/stats-metric-defs/v1/${route.active.runId}`, route.requestUrl),
+  );
+  try {
+    const cached = await cache?.match(key);
+    if (cached) return (await cached.json()) as Record<string, MetricDef>;
+  } catch {
+    // Der optionale Cache darf die Datenbankabfrage nicht verhindern.
+  }
+  const defs = await queryMetricDefs(route.db);
+  try {
+    await cache?.put(
+      key,
+      Response.json(defs, { headers: { 'Cache-Control': 'public, max-age=3600' } }),
+    );
+  } catch {
+    console.warn('[stats-api] metric cache write failed');
+  }
+  return defs;
+}
+
+async function queryMetricDefs(connection: Connection): Promise<Record<string, MetricDef>> {
   let rows: RowDataPacket[];
   try {
     rows = await queryRows<RowDataPacket>(
@@ -1013,32 +1045,49 @@ function isTerminalMojangProfileStatus(status: number): boolean {
   );
 }
 
-async function fetchMojangSessionProfile(uuidHex: string): Promise<MojangSessionProfileResult> {
+async function fetchProfileSource(
+  url: string,
+  signal: AbortSignal,
+  timeoutMs: number,
+): Promise<MojangProfileResult> {
+  signal.throwIfAborted();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4500);
+  const abort = () => controller.abort();
+  signal.addEventListener('abort', abort, { once: true });
+  const timeout = setTimeout(abort, timeoutMs);
 
   try {
-    const response = await fetch(
-      `https://sessionserver.mojang.com/session/minecraft/profile/${encodeURIComponent(uuidHex)}`,
-      {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/json',
-        },
-      },
-    );
-
-    const body = await response.text();
-    if (isTerminalMojangProfileStatus(response.status)) {
-      return { profile: { status: response.status, body }, status: response.status };
-    }
-
-    return { profile: null, status: response.status };
-  } catch {
-    return { profile: null, status: 0 };
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    return {
+      status: response.status,
+      body: await readBoundedText(response, PROFILE_MAX_RESPONSE_BYTES),
+    };
   } finally {
     clearTimeout(timeout);
+    signal.removeEventListener('abort', abort);
+  }
+}
+
+async function fetchMojangSessionProfile(
+  uuidHex: string,
+  signal: AbortSignal,
+): Promise<MojangSessionProfileResult> {
+  try {
+    const profile = await fetchProfileSource(
+      `https://sessionserver.mojang.com/session/minecraft/profile/${encodeURIComponent(uuidHex)}`,
+      signal,
+      4_500,
+    );
+    if (isTerminalMojangProfileStatus(profile.status)) {
+      return { profile, status: profile.status };
+    }
+
+    return { profile: null, status: profile.status };
+  } catch {
+    return { profile: null, status: 0 };
   }
 }
 
@@ -1047,19 +1096,14 @@ async function fetchMojangFallbackCandidate(params: {
   provider: MojangFallbackProvider;
   url: string;
   convertBody: (uuidHex: string, body: string) => string | null;
+  signal: AbortSignal;
 }): Promise<MojangFallbackCandidate | null> {
   const { uuidHex, provider, url, convertBody } = params;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-    const body = await response.text();
-    const convertedBody = response.status === 200 ? convertBody(uuidHex, body) : null;
-    return { provider, status: response.status, body, convertedBody };
+    const { status, body } = await fetchProfileSource(url, params.signal, 3_000);
+    const convertedBody = status === 200 ? convertBody(uuidHex, body) : null;
+    return { provider, status, body, convertedBody };
   } catch {
     return null;
   }
@@ -1088,7 +1132,21 @@ async function fetchMojangProfile(
   uuidHex: string,
   options: MojangProfileFetchOptions = {},
 ): Promise<MojangProfileResult> {
-  const session = await fetchMojangSessionProfile(uuidHex);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROFILE_FETCH_BUDGET_MS);
+  try {
+    return await fetchMojangProfileWithBudget(uuidHex, options, controller.signal);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchMojangProfileWithBudget(
+  uuidHex: string,
+  options: MojangProfileFetchOptions,
+  signal: AbortSignal,
+): Promise<MojangProfileResult> {
+  const session = await fetchMojangSessionProfile(uuidHex, signal);
   if (session.profile) return session.profile;
 
   if (options.allowFallback === false) {
@@ -1099,6 +1157,7 @@ async function fetchMojangProfile(
 
   const minetools = await fetchMojangFallbackCandidate({
     uuidHex,
+    signal,
     provider: 'minetools',
     url: `https://api.minetools.eu/profile/${encodeURIComponent(uuidHex)}`,
     convertBody: buildMojangProfileFromMinetoolsBody,
@@ -1108,6 +1167,7 @@ async function fetchMojangProfile(
 
   const ashcon = await fetchMojangFallbackCandidate({
     uuidHex,
+    signal,
     provider: 'ashcon',
     url: `https://api.ashcon.app/mojang/v2/user/${encodeURIComponent(uuidHex)}`,
     convertBody: buildMojangProfileFromAshconBody,
@@ -1440,7 +1500,7 @@ async function handleProfileEndpoint(context: APIContext, requestUrl: URL): Prom
 }
 
 async function handleMetricsEndpoint(route: DataRouteContext): Promise<Response> {
-  const defs = await loadMetricDefs(route.db);
+  const defs = await loadMetricDefs(route);
   const headers = etagHeaders('metrics', `metrics:${route.active.runId}`, route.active.generatedAt);
   return jsonResponse(withGenerated({ metrics: defs }, route.active), { headers });
 }
@@ -1450,9 +1510,9 @@ async function handleSummaryEndpoint(route: DataRouteContext): Promise<Response>
   if (requested.length === 0) return jsonError(400, 'metrics required');
   if (requested.length > 12) return jsonError(400, 'too many metrics');
 
-  const defs = await loadMetricDefs(route.db);
+  const defs = await loadMetricDefs(route);
   for (const metric of requested) {
-    if (!defs[metric]) return jsonError(400, 'unknown metric');
+    if (!Object.hasOwn(defs, metric)) return jsonError(400, 'unknown metric');
   }
 
   const playerRows = await queryRows<RowDataPacket>(
@@ -1558,7 +1618,7 @@ async function handleLeaderboardsEndpoint(route: DataRouteContext): Promise<Resp
   const limit = clampLimit(parseInteger(route.requestUrl.searchParams.get('limit'), 50));
   const limitPlus = Math.min(limit + 1, API_MAX_LIMIT + 1);
 
-  const defs = await loadMetricDefs(route.db);
+  const defs = await loadMetricDefs(route);
   if (Object.keys(defs).length === 0 || route.active.runId === 0) {
     const headers = etagHeaders(
       'leaderboards',
@@ -1660,8 +1720,8 @@ async function handleLeaderboardEndpoint(route: DataRouteContext): Promise<Respo
   const cursor = cursorRaw ? decodeCursor(cursorRaw) : null;
   if (cursorRaw && !cursor) return jsonError(400, 'invalid cursor');
 
-  const defs = await loadMetricDefs(route.db);
-  if (!defs[metric]) return jsonError(400, 'unknown metric');
+  const defs = await loadMetricDefs(route);
+  if (!Object.hasOwn(defs, metric)) return jsonError(400, 'unknown metric');
 
   const sqlParts = [
     `SELECT LOWER(HEX(uuid)) AS uuid_hex, value
@@ -1768,11 +1828,7 @@ async function handlePlayersEndpoint(route: DataRouteContext): Promise<Response>
         endpoint: route.endpoint,
         ...summarizeError(retryError),
       });
-      const headers = new Headers({
-        'Cache-Control': 'no-store',
-        'X-Stats-Api-Degraded': '1',
-      });
-      return jsonResponse(withGenerated({ items: [] }, route.active), { headers });
+      return jsonError(503, 'player search unavailable');
     }
   }
 
@@ -2017,9 +2073,76 @@ async function handleBanStatusEndpoint(route: DataRouteContext): Promise<Respons
   );
 }
 
-async function routeRequest(context: APIContext, endpoint: string): Promise<Response> {
-  const requestUrl = new URL(context.request.url);
+function normalizeApiUrl(endpoint: string, source: URL): URL | Response {
+  const url = new URL(source);
+  url.pathname = `/api/${endpoint}/`;
+  url.search = '';
+  const params = source.searchParams;
 
+  switch (endpoint) {
+    case 'player':
+    case 'profile':
+    case 'cape': {
+      const { uuidHex } = readEndpointUuidParams(source, 'uuid', endpoint);
+      if (!uuidHex) return jsonError(400, 'invalid uuid');
+      url.searchParams.set('uuid', uuidHexToDashed(uuidHex));
+      break;
+    }
+    case 'summary': {
+      const metrics = parseRequestedMetrics(params.get('metrics') ?? '').sort();
+      if (!metrics.length) return jsonError(400, 'metrics required');
+      if (metrics.length > 12) return jsonError(400, 'too many metrics');
+      if (metrics.some((metric) => metric.length > 128)) return jsonError(400, 'invalid metric');
+      url.searchParams.set('metrics', metrics.join(','));
+      break;
+    }
+    case 'leaderboard': {
+      const metric = (params.get('metric') ?? '').trim();
+      if (!metric) return jsonError(400, 'metric required');
+      if (metric.length > 128) return jsonError(400, 'invalid metric');
+      url.searchParams.set('metric', metric);
+      const cursor = (params.get('cursor') ?? '').trim();
+      if (cursor) {
+        if (cursor.length > 256 || !decodeCursor(cursor)) return jsonError(400, 'invalid cursor');
+        url.searchParams.set('cursor', cursor);
+      }
+      url.searchParams.set('limit', String(clampLimit(parseInteger(params.get('limit'), 200))));
+      break;
+    }
+    case 'leaderboards':
+      url.searchParams.set('limit', String(clampLimit(parseInteger(params.get('limit'), 50))));
+      break;
+    case 'players': {
+      const q = (params.get('q') ?? '').trim().toLowerCase();
+      if (q.length > 64) return jsonError(400, 'query too long');
+      if (q.length < 2) {
+        return jsonResponse(withGenerated({ items: [] }, emptyActiveRun()), {
+          headers: { 'Cache-Control': 'no-store' },
+        });
+      }
+      url.searchParams.set('q', q);
+      url.searchParams.set(
+        'limit',
+        String(clampLimit(Math.min(parseInteger(params.get('limit'), 8), API_MAX_SEARCH))),
+      );
+      break;
+    }
+    case 'ban-status': {
+      const query = readBanStatusQuery(source);
+      if (query instanceof Response) return query;
+      url.searchParams.set('query', query.raw);
+      break;
+    }
+  }
+  url.searchParams.sort();
+  return url;
+}
+
+async function routeRequest(
+  context: APIContext,
+  endpoint: string,
+  requestUrl: URL,
+): Promise<Response> {
   switch (endpoint) {
     case 'cape':
       return handleCapeEndpoint(context, requestUrl);
@@ -2095,21 +2218,36 @@ function resolveEndpointFromContext(context: APIContext): string | null {
 }
 
 async function readCachedApiResponse(
-  context: APIContext,
   endpoint: string,
-  method: string,
   edgeCache: Cache | null,
   cacheKey: Request,
-): Promise<Response | null> {
+): Promise<{ response: Response; staleForSeconds: number } | null> {
   if (!edgeCache) return null;
 
   try {
     const cached = await edgeCache.match(cacheKey);
     if (!cached) return null;
 
-    const conditional = maybeNotModified(context.request, cached);
-    const hitResponse = conditional ?? withApiHeaders(cached, { cacheStatus: 'HIT' });
-    return method === 'HEAD' ? withoutBody(hitResponse) : hitResponse;
+    const headers = new Headers(cached.headers);
+    const freshUntil = Number(headers.get('X-Stats-Cache-Fresh-Until'));
+    const storedAt = Number(headers.get('X-Stats-Cache-Stored-At'));
+    const staleForSeconds = freshUntil ? Math.max(0, (Date.now() - freshUntil) / 1000) : 0;
+    const profile = resolveCacheProfile(endpoint);
+    if (
+      staleForSeconds > Math.max(profile.staleIfErrorSeconds, profile.staleWhileRevalidateSeconds)
+    )
+      return null;
+    const cacheControl = headers.get('X-Stats-Cache-Control');
+    if (cacheControl) headers.set('Cache-Control', cacheControl);
+    if (storedAt)
+      headers.set('Age', String(Math.max(0, Math.floor((Date.now() - storedAt) / 1000))));
+    headers.delete('X-Stats-Cache-Fresh-Until');
+    headers.delete('X-Stats-Cache-Stored-At');
+    headers.delete('X-Stats-Cache-Control');
+    return {
+      response: new Response(cached.body, { status: cached.status, headers }),
+      staleForSeconds,
+    };
   } catch (error) {
     console.warn('[stats-api] edge cache read failed', {
       endpoint,
@@ -2119,9 +2257,13 @@ async function readCachedApiResponse(
   }
 }
 
-async function executeRouteRequest(context: APIContext, endpoint: string): Promise<Response> {
+async function executeRouteRequest(
+  context: APIContext,
+  endpoint: string,
+  requestUrl: URL,
+): Promise<Response> {
   try {
-    return await routeRequest(context, endpoint);
+    return await routeRequest(context, endpoint, requestUrl);
   } catch (error) {
     const details = summarizeError(error);
     console.error('[stats-api] request failed', {
@@ -2145,18 +2287,40 @@ function isCacheableApiResponse(response: Response): boolean {
   );
 }
 
-function writeResponseToEdgeCache(
+async function writeResponseToEdgeCache(
   context: APIContext,
   endpoint: string,
   edgeCache: Cache | null,
   cacheKey: Request,
   response: Response,
-): void {
+): Promise<void> {
   if (!edgeCache) return;
 
   try {
-    const putPromise = edgeCache.put(cacheKey, response.clone());
-    asExecutionContext(context)?.waitUntil?.(putPromise);
+    const profile = resolveCacheProfile(endpoint);
+    const headers = new Headers(response.headers);
+    const cacheControl = headers.get('Cache-Control') ?? buildCacheControl(profile);
+    const freshSeconds = Number(
+      cacheControl.match(/(?:^|[ ,])max-age=(\d+)/)?.[1] ?? profile.maxAgeSeconds,
+    );
+    // Die Cache API setzt SWR/SIE nicht um. Frische und Aufbewahrung sind deshalb getrennt.
+    headers.set('X-Stats-Cache-Control', cacheControl);
+    headers.set('X-Stats-Cache-Stored-At', String(Date.now()));
+    headers.set('X-Stats-Cache-Fresh-Until', String(Date.now() + freshSeconds * 1000));
+    headers.set(
+      'Cache-Control',
+      `public, max-age=${freshSeconds + Math.max(profile.staleWhileRevalidateSeconds, profile.staleIfErrorSeconds)}`,
+    );
+    const cachedResponse = new Response(response.clone().body, {
+      status: response.status,
+      headers,
+    });
+    const putPromise = edgeCache.put(cacheKey, cachedResponse).catch((error: unknown) => {
+      console.warn('[stats-api] edge cache write failed', { endpoint, message: String(error) });
+    });
+    const executionContext = asExecutionContext(context);
+    if (executionContext?.waitUntil) executionContext.waitUntil(putPromise);
+    else await putPromise;
   } catch (error) {
     console.warn('[stats-api] edge cache write failed', {
       endpoint,
@@ -2192,26 +2356,70 @@ export async function handleStatsApiProxy(context: APIContext): Promise<Response
     );
   }
 
-  const cacheKey = new Request(new URL(context.request.url).toString(), { method: 'GET' });
+  const requestUrl = normalizeApiUrl(endpoint, new URL(context.request.url));
+  if (requestUrl instanceof Response) {
+    return finalizeApiResponse(
+      method,
+      context.request,
+      withApiHeaders(requestUrl, { cacheStatus: 'BYPASS' }),
+    );
+  }
+  const cacheUrl = new URL(requestUrl);
+  cacheUrl.pathname = `/__cache/stats-api/v2/${endpoint}`;
+  const cacheKey = new Request(cacheUrl, { method: 'GET' });
   const edgeCache = getEdgeCache();
-  const cachedResponse = await readCachedApiResponse(
-    context,
-    endpoint,
-    method,
-    edgeCache,
-    cacheKey,
-  );
-  if (cachedResponse) return cachedResponse;
-
-  const response = await executeRouteRequest(context, endpoint);
-  const cacheable = isCacheableApiResponse(response);
-  const responseForClient = withApiHeaders(response, {
-    cacheStatus: cacheable ? 'MISS' : 'BYPASS',
-  });
-
-  if (cacheable) {
-    writeResponseToEdgeCache(context, endpoint, edgeCache, cacheKey, responseForClient);
+  const cachedResponse = await readCachedApiResponse(endpoint, edgeCache, cacheKey);
+  if (cachedResponse?.staleForSeconds === 0) {
+    return finalizeApiResponse(
+      method,
+      context.request,
+      withApiHeaders(cachedResponse.response, { cacheStatus: 'HIT' }),
+    );
   }
 
+  const refresh = async (): Promise<Response> => {
+    const response = await executeRouteRequest(context, endpoint, requestUrl);
+    const cacheable = isCacheableApiResponse(response);
+    const responseForClient = withApiHeaders(response, {
+      cacheStatus: cacheable ? 'MISS' : 'BYPASS',
+    });
+    if (cacheable)
+      await writeResponseToEdgeCache(context, endpoint, edgeCache, cacheKey, responseForClient);
+    return responseForClient;
+  };
+
+  const staleResponse = (): Response => {
+    const response = withApiHeaders(cachedResponse!.response, { cacheStatus: 'STALE' });
+    response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('X-Stats-Api-Stale', '1');
+    return method === 'HEAD' ? withoutBody(response) : response;
+  };
+  const profile = resolveCacheProfile(endpoint);
+  const executionContext = asExecutionContext(context);
+  if (
+    cachedResponse &&
+    cachedResponse.staleForSeconds <= profile.staleWhileRevalidateSeconds &&
+    executionContext?.waitUntil
+  ) {
+    executionContext.waitUntil(
+      refresh()
+        .then(() => undefined)
+        .catch((error: unknown) => {
+          console.warn('[stats-api] background refresh failed', {
+            endpoint,
+            message: String(error),
+          });
+        }),
+    );
+    return staleResponse();
+  }
+
+  const responseForClient = await refresh();
+  if (
+    responseForClient.status >= 500 &&
+    cachedResponse &&
+    cachedResponse.staleForSeconds <= profile.staleIfErrorSeconds
+  )
+    return staleResponse();
   return finalizeApiResponse(method, context.request, responseForClient);
 }

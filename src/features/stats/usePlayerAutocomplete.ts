@@ -29,12 +29,18 @@ export function usePlayerAutocomplete({
   const knownItemsRef = useRef<Map<string, PlayersSearchItem>>(new Map());
 
   function setValue(next: string) {
+    if (next !== value) {
+      abortRef.current?.abort();
+      setItems([]);
+      setSelectedIndex(-1);
+    }
     suppressOpenForQueryRef.current = null;
     setErrorMessage(null);
     setValueState(next);
   }
 
   function setValueWithoutAutoOpen(next: string) {
+    if (next !== value) abortRef.current?.abort();
     suppressOpenForQueryRef.current = next.trim().toLowerCase();
     setErrorMessage(null);
     setIsLoading(false);
@@ -54,12 +60,8 @@ export function usePlayerAutocomplete({
   }, []);
 
   useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
-
-  useEffect(() => {
+    const ac = new AbortController();
+    abortRef.current = ac;
     const q = value.trim();
     if (q.length < 2) {
       abortRef.current?.abort();
@@ -74,14 +76,13 @@ export function usePlayerAutocomplete({
     }
 
     const t = window.setTimeout(async () => {
-      abortRef.current?.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
+      if (ac.signal.aborted) return;
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
         const data = await searchPlayers(q, 6, ac.signal);
+        if (ac.signal.aborted) return;
         if (typeof data.__generated === 'string') onGeneratedIso?.(data.__generated);
         const apiItems = Array.isArray(data.items) ? data.items : [];
         for (const item of apiItems) {
@@ -99,7 +100,7 @@ export function usePlayerAutocomplete({
         setErrorMessage(null);
         onError?.(null);
       } catch (e) {
-        if ((e as Error)?.name === 'AbortError') return;
+        if (ac.signal.aborted || (e as Error)?.name === 'AbortError') return;
         console.warn('Autocomplete Fehler', e);
         setItems([]);
         setOpen(true);
@@ -110,7 +111,10 @@ export function usePlayerAutocomplete({
       }
     }, 180);
 
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      ac.abort();
+    };
   }, [value, onGeneratedIso, onError]);
 
   return {

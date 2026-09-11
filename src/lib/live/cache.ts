@@ -321,7 +321,9 @@ const startRevalidation = <T>(
   if (minRevalidateIntervalMs > 0) {
     const lastRevalidateAt = lastRevalidateAtByKey.get(storageKey);
     if (typeof lastRevalidateAt === 'number' && now - lastRevalidateAt < minRevalidateIntervalMs) {
-      return Promise.resolve(readInitialState<T>(storageKey, options, storage));
+      const cachedState = readInitialState<T>(storageKey, options, storage);
+      // Ohne nutzbare Daten muss ein Wiederholungsversuch wirklich eine Anfrage starten.
+      if (cachedState.data !== undefined) return Promise.resolve(cachedState);
     }
   }
 

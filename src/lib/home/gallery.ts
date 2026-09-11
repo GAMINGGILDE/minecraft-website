@@ -1,101 +1,41 @@
-import headerBackgroundImage from '../../assets/images/home/header-background.webp';
+import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import headerBackgroundImage from '../../assets/images/home/header-background.webp';
 
-type HomeGallery = {
-  urls: string[];
-  fallback: string;
-  initial: string;
-  initialImage: ImageMetadata;
+export type GalleryImage = {
+  src: string;
+  srcset: string;
+  sizes: string;
+  width: number;
+  height: number;
 };
 
-type ImageMetadataModule = {
-  default: ImageMetadata;
-};
-
-type ImageUrlModule = {
-  default: string;
-};
-
-const galleryImageMetadataModules = import.meta.glob<ImageMetadataModule>(
+const modules = import.meta.glob<{ default: ImageMetadata }>(
   '../../assets/images/home/gallery/*.{png,jpg,jpeg,webp,avif}',
   { eager: true },
 );
 
-const galleryImageUrlModules = import.meta.glob<ImageUrlModule>(
-  '../../assets/images/home/gallery/*.{png,jpg,jpeg,webp,avif}',
-  {
-    eager: true,
-    query: '?url',
-  },
-);
+// Auch Folgebilder bekommen beim Build dieselben responsiven Varianten wie das Startbild.
+export async function getHomeGallery(): Promise<GalleryImage[]> {
+  const sources = Object.entries(modules)
+    .sort(([a], [b]) => a.localeCompare(b, 'de', { numeric: true }))
+    .map(([, module]) => module.default);
+  if (sources.length === 0) sources.push(headerBackgroundImage);
 
-const fileNameFromGlobPath = (value: string): string => {
-  const normalized = value.replace(/\\/g, '/');
-  const parts = normalized.split('/');
-  return parts[parts.length - 1] ?? '';
-};
-
-const sortByGalleryFileName = <T>(a: [string, T], b: [string, T]): number =>
-  fileNameFromGlobPath(a[0]).localeCompare(fileNameFromGlobPath(b[0]), 'de', {
-    numeric: true,
-  });
-
-const toSortedGalleryImages = (): ImageMetadata[] =>
-  Object.entries(galleryImageMetadataModules)
-    .sort(sortByGalleryFileName)
-    .map((entry) => entry[1].default);
-
-const toSortedGalleryUrls = (): string[] =>
-  Object.entries(galleryImageUrlModules)
-    .sort(sortByGalleryFileName)
-    .map((entry) => entry[1].default);
-
-const toUniqueImageUrls = (images: ImageMetadata[]): string[] => {
-  const seen = new Set<string>();
-  const urls: string[] = [];
-
-  for (const image of images) {
-    if (seen.has(image.src)) continue;
-    seen.add(image.src);
-    urls.push(image.src);
-  }
-
-  return urls;
-};
-
-const toUniqueUrls = (urls: string[]): string[] => {
-  const seen = new Set<string>();
-  const uniqueUrls: string[] = [];
-
-  for (const url of urls) {
-    if (seen.has(url)) continue;
-    seen.add(url);
-    uniqueUrls.push(url);
-  }
-
-  return uniqueUrls;
-};
-
-const toSortedFallbackUrls = (): string[] =>
-  toUniqueImageUrls(
-    Object.entries(galleryImageMetadataModules)
-      .sort((a, b) =>
-        fileNameFromGlobPath(a[0]).localeCompare(fileNameFromGlobPath(b[0]), 'de', {
-          numeric: true,
-        }),
-      )
-      .map((entry) => entry[1].default),
+  return Promise.all(
+    sources.map(async (src) => {
+      const width = Math.min(1920, src.width);
+      const height = Math.round((src.height * width) / src.width);
+      const sizes = '(min-width: 1024px) 50vw, 100vw';
+      const image = await getImage({
+        src,
+        width,
+        height,
+        format: 'webp',
+        sizes,
+        widths: [...new Set([768, 1280, width].filter((value) => value <= width))],
+      });
+      return { src: image.src, srcset: image.srcSet.attribute, sizes, width, height };
+    }),
   );
-
-// Build-Time: Galerie-Bilder aus src/assets/images/home/gallery einsammeln.
-export const getHomeGallery = (): HomeGallery => {
-  const fallbackImage = headerBackgroundImage;
-  const images = toSortedGalleryImages();
-  const initialImage = images[0] ?? fallbackImage;
-  const urls = toUniqueUrls(toSortedGalleryUrls());
-  const safeUrls = urls.length > 0 ? urls : toSortedFallbackUrls();
-  const initial = initialImage.src;
-  const fallback = fallbackImage.src;
-
-  return { urls: safeUrls, fallback, initial, initialImage };
-};
+}
