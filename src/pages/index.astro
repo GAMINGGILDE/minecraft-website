@@ -10,7 +10,7 @@ import { minecraftGilde } from '../config/minecraftGilde';
 import '../styles/home.css';
 
 // Build-Time: Galerie-URLs einsammeln (wird im Build aufgerufen).
-const { urls: galleryUrls, initialImage: galleryInitialImage } = getHomeGallery();
+const galleryImages = await getHomeGallery();
 // Version/IP zentral aus der Konfiguration holen, damit Metadaten konsistent bleiben.
 const MINECRAFT_VERSION = minecraftGilde.minecraftVersion;
 const SERVER_IP = minecraftGilde.serverIp;
@@ -22,9 +22,5 @@ const SERVER_IP = minecraftGilde.serverIp;
   keywords={`Minecraft Gilde, Minecraft Java Edition, Vanilla-SMP, Survival, Freebuild, Langzeitwelt, kein Pay2Win, Minecraft ${MINECRAFT_VERSION}, ${SERVER_IP}`}
   bodyClass="is-home"
 >
-  <HomePage
-    anchorItems={HOME_ANCHORS}
-    galleryUrls={galleryUrls}
-    galleryInitialImage={galleryInitialImage}
-  />
+  <HomePage anchorItems={HOME_ANCHORS} galleryImages={galleryImages} />
 </BaseLayout>

@@ -66,6 +66,7 @@ const BASE_OPTIONS = {
 describe('live/cache', () => {
   afterEach(() => {
     resetLiveResourceCache();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -410,6 +411,48 @@ describe('live/cache', () => {
       fetchedAt: 7_000,
       error: undefined,
     });
+  });
+
+  it.each(['network', 'timeout'] as const)(
+    'retries after a %s failure without leaving a loading state with no request',
+    async (kind) => {
+      const fetcher = vi
+        .fn<() => Promise<LiveDataState<string>>>()
+        .mockResolvedValueOnce({ status: 'error', error: { kind } })
+        .mockResolvedValueOnce({ status: 'ok', data: 'recovered' });
+      const options = {
+        ...BASE_OPTIONS,
+        storage: null,
+        now: () => 7_000,
+        minRevalidateIntervalMs: 15_000,
+      };
+
+      expect((await getLiveResource('retry', fetcher, options).revalidate)?.status).toBe('error');
+      const retry = getLiveResource('retry', fetcher, options);
+      const duplicate = getLiveResource('retry', fetcher, options);
+      expect(retry.revalidate).toBe(duplicate.revalidate);
+      expect((await retry.revalidate)?.data).toBe('recovered');
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('refreshes an expired snapshot even within the revalidation interval', async () => {
+    let now = 1_000;
+    const fetcher = vi.fn(async (): Promise<LiveDataState<number>> => ({
+      status: 'ok',
+      data: now,
+      updatedAt: now,
+    }));
+    const options = {
+      ...BASE_OPTIONS,
+      storage: null,
+      now: () => now,
+      minRevalidateIntervalMs: 15_000,
+    };
+    await getLiveResource('expired', fetcher, options).revalidate;
+    now = 12_000;
+    expect((await getLiveResource('expired', fetcher, options).revalidate)?.data).toBe(12_000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it('reads legacy cache payload format', () => {

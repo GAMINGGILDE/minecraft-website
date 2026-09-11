@@ -60,7 +60,8 @@ function resolveLeaderboardErrorKind(error: unknown): LiveDataErrorKind {
   if (status === 429) return 'rate_limit';
   if (typeof status === 'number' && status >= 400 && status < 500) return 'invalid';
   if (typeof status === 'number' && status >= 500) return 'network';
-  if ((error as Error | undefined)?.name === 'AbortError') return 'timeout';
+  if (['AbortError', 'TimeoutError'].includes((error as Error | undefined)?.name ?? ''))
+    return 'timeout';
   return 'unknown';
 }
 
