@@ -15,8 +15,8 @@ import type { PlayerApiResponse, PlayerTranslations } from '../stats-core/types'
 import {
   buildMcHeadsAvatarUrl,
   buildMcHeadsSkinUrl,
-  buildMinotarHelmUrl,
-  buildMinotarSkinUrl,
+  buildCraftheadHelmUrl,
+  buildCraftheadSkinUrl,
 } from '../../lib/minecraft/playerTextures';
 import { FetchJsonHttpError } from '../../lib/http/fetchJson';
 import { parseFilter } from './format';
@@ -277,7 +277,7 @@ export function usePlayerStatsState(): UsePlayerStatsState {
   }, [playerName]);
 
   const skinHeadUrl = useMemo(
-    () => buildMinotarHelmUrl(uuidFull, playerName, 512),
+    () => buildCraftheadHelmUrl(uuidFull, playerName, 512),
     [playerName, uuidFull],
   );
   const skinHeadFallback = useMemo(
@@ -285,7 +285,7 @@ export function usePlayerStatsState(): UsePlayerStatsState {
     [playerName, uuidFull],
   );
   const skinFullUrl = useMemo(
-    () => buildMinotarSkinUrl(uuidFull, playerName),
+    () => buildCraftheadSkinUrl(uuidFull, playerName),
     [playerName, uuidFull],
   );
   const skinFullFallback = useMemo(

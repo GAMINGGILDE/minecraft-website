@@ -1,6 +1,9 @@
 import { useEffect, useState, type ImgHTMLAttributes } from 'react';
 
-import { buildMcHeadsAvatarUrl, buildMinotarHelmUrl } from '../../../lib/minecraft/playerTextures';
+import {
+  buildMcHeadsAvatarUrl,
+  buildCraftheadHelmUrl,
+} from '../../../lib/minecraft/playerTextures';
 
 type PlayerAvatarProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   uuid?: string | null;
@@ -16,7 +19,7 @@ export function PlayerAvatar({
   alt = '',
   ...imgProps
 }: PlayerAvatarProps) {
-  const primarySrc = buildMinotarHelmUrl(uuid, name, size);
+  const primarySrc = buildCraftheadHelmUrl(uuid, name, size);
   const fallbackSrc = buildMcHeadsAvatarUrl(uuid, name, size);
   const [src, setSrc] = useState(primarySrc);
   const [fallbackAttempted, setFallbackAttempted] = useState(false);

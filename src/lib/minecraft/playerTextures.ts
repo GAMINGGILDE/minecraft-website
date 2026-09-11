@@ -10,9 +10,16 @@ export function resolvePlayerTextureId(uuid?: string | null, name?: string | nul
   return String(name || '').trim();
 }
 
-export function buildMinotarHelmUrl(uuid?: string | null, name?: string | null, size = 80): string {
+export function buildCraftheadHelmUrl(
+  uuid?: string | null,
+  name?: string | null,
+  size = 80,
+): string {
   const textureId = resolvePlayerTextureId(uuid, name);
-  return textureId ? `https://minotar.net/helm/${encodeURIComponent(textureId)}/${size}.png` : '';
+  const imageSize = Math.min(300, Math.max(8, Math.round(size)));
+  return textureId
+    ? `https://crafthead.net/helm/${encodeURIComponent(textureId)}/${imageSize}`
+    : '';
 }
 
 export function buildMcHeadsAvatarUrl(
@@ -24,9 +31,9 @@ export function buildMcHeadsAvatarUrl(
   return textureId ? `https://mc-heads.net/avatar/${encodeURIComponent(textureId)}/${size}` : '';
 }
 
-export function buildMinotarSkinUrl(uuid?: string | null, name?: string | null): string {
+export function buildCraftheadSkinUrl(uuid?: string | null, name?: string | null): string {
   const textureId = resolvePlayerTextureId(uuid, name);
-  return textureId ? `https://minotar.net/skin/${encodeURIComponent(textureId)}.png` : '';
+  return textureId ? `https://crafthead.net/skin/${encodeURIComponent(textureId)}` : '';
 }
 
 export function buildMcHeadsSkinUrl(uuid?: string | null, name?: string | null): string {

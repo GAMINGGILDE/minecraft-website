@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildMcHeadsAvatarUrl,
   buildMcHeadsSkinUrl,
-  buildMinotarHelmUrl,
-  buildMinotarSkinUrl,
+  buildCraftheadHelmUrl,
+  buildCraftheadSkinUrl,
   compactMinecraftUuid,
   resolvePlayerTextureId,
 } from './playerTextures';
@@ -27,8 +27,11 @@ describe('playerTextures', () => {
   });
 
   it('baut Kopf-URLs bevorzugt mit UUID', () => {
-    expect(buildMinotarHelmUrl('00000000-0000-0000-0000-0000000000AB', 'Steve', 32)).toBe(
-      'https://minotar.net/helm/000000000000000000000000000000ab/32.png',
+    expect(buildCraftheadHelmUrl('00000000-0000-0000-0000-0000000000AB', 'Steve', 32)).toBe(
+      'https://crafthead.net/helm/000000000000000000000000000000ab/32',
+    );
+    expect(buildCraftheadHelmUrl('00000000-0000-0000-0000-0000000000AB', 'Steve', 512)).toBe(
+      'https://crafthead.net/helm/000000000000000000000000000000ab/300',
     );
     expect(buildMcHeadsAvatarUrl('00000000-0000-0000-0000-0000000000AB', 'Steve', 32)).toBe(
       'https://mc-heads.net/avatar/000000000000000000000000000000ab/32',
@@ -36,8 +39,8 @@ describe('playerTextures', () => {
   });
 
   it('baut Skin-URLs bevorzugt mit UUID', () => {
-    expect(buildMinotarSkinUrl('00000000-0000-0000-0000-0000000000AB', 'Steve')).toBe(
-      'https://minotar.net/skin/000000000000000000000000000000ab.png',
+    expect(buildCraftheadSkinUrl('00000000-0000-0000-0000-0000000000AB', 'Steve')).toBe(
+      'https://crafthead.net/skin/000000000000000000000000000000ab',
     );
     expect(buildMcHeadsSkinUrl('00000000-0000-0000-0000-0000000000AB', 'Steve')).toBe(
       'https://mc-heads.net/skin/000000000000000000000000000000ab',

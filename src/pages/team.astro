@@ -5,7 +5,7 @@ import Badge from '../components/ui/Badge.astro';
 import DividerList from '../components/ui/DividerList.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
 import { TEAM_GROUPS, TEAM_MEMBERS } from '../data/team';
-import { buildMcHeadsAvatarUrl, buildMinotarHelmUrl } from '../lib/minecraft/playerTextures';
+import { buildMcHeadsAvatarUrl, buildCraftheadHelmUrl } from '../lib/minecraft/playerTextures';
 import { Shield, Wrench, ArrowRight } from '@lucide/astro';
 import { minecraftGilde } from '../config/minecraftGilde';
 
@@ -61,7 +61,7 @@ const groupIconByKey = {
                   <li class="mg-row flex items-center gap-3 py-3">
                     <div class="flex min-w-0 items-center gap-3">
                       <img
-                        src={buildMinotarHelmUrl(m.uuid, null, 96)}
+                        src={buildCraftheadHelmUrl(m.uuid, null, 96)}
                         data-avatar-fallback={buildMcHeadsAvatarUrl(m.uuid, null, 96)}
                         alt={m.inGameName}
                         width="48"

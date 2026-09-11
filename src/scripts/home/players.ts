@@ -1,19 +1,10 @@
 import type { LiveDataState } from '../../lib/live/types';
 import type { MinecraftStatusSnapshot } from '../../lib/minecraft/status';
 import { formatLastUpdatedLabel } from '../../lib/live/lastUpdated';
+import { buildCraftheadHelmUrl, buildMcHeadsAvatarUrl } from '../../lib/minecraft/playerTextures';
 
 const qs = <T extends Element>(sel: string, root: ParentNode = document): T | null =>
   root.querySelector<T>(sel);
-
-const minotarURL = (uuid: string, name: string, size = 80): string =>
-  uuid
-    ? `https://minotar.net/helm/${encodeURIComponent(uuid)}/${size}.png`
-    : `https://minotar.net/helm/${encodeURIComponent(name)}/${size}.png`;
-
-const mcHeadsURL = (uuid: string, name: string, size = 80): string =>
-  uuid
-    ? `https://mc-heads.net/avatar/${encodeURIComponent(uuid)}/${size}`
-    : `https://mc-heads.net/avatar/${encodeURIComponent(name)}/${size}`;
 
 const setMountMessage = (mount: HTMLElement, message: string): void => {
   const p = document.createElement('p');
@@ -75,13 +66,13 @@ function renderPlayers(data: MinecraftStatusSnapshot): void {
     img.alt = name;
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.src = minotarURL(uuid, name, 48);
+    img.src = buildCraftheadHelmUrl(uuid, name, 48);
 
     const onError = (): void => {
       const step = Number(img.dataset.fallbackStep ?? '0');
       if (step === 0) {
         img.dataset.fallbackStep = '1';
-        img.src = mcHeadsURL(uuid, name, 48);
+        img.src = buildMcHeadsAvatarUrl(uuid, name, 48);
         return;
       }
 
