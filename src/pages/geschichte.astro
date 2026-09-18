@@ -141,15 +141,17 @@ const milestones: Milestone[] = [
     actionsClass="flex flex-wrap gap-2"
   >
     <Fragment slot="subtitle">
-      Von <span class="text-fg font-medium">minecraft.falkner.info</span> bis Folia - unsere Reise seit
-      Februar 2024.
+      Von <span class="text-fg font-medium">minecraft.falkner.info</span> bis Folia - unsere Reise
+      seit Februar 2024.
     </Fragment>
 
     <Fragment slot="actions">
       <Button href={DISCORD_URL} external variant="secondary" class="gap-2">
         Discord <ArrowRight size={18} />
       </Button>
-      <Button href="/serverinfos" variant="ghost">Serverinfos</Button>
+      <Button href="/serverinfos" variant="ghost">
+        Serverinfos
+      </Button>
     </Fragment>
 
     <div class="mt-6 flex flex-wrap gap-2">
@@ -180,61 +182,58 @@ const milestones: Milestone[] = [
             <div
               class="bg-border/70 absolute top-2 bottom-2 left-4 w-px [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]"
               aria-hidden="true"
-            >
-            </div>
+            ></div>
 
             <ol class="list-none pl-0" data-motion-stagger="70">
-              {
-                milestones.map((m, index) => (
-                  <li id={m.id} class="relative py-6 pl-12 last:pb-0" data-motion="reveal">
-                    <div class="absolute top-8 left-4 -translate-x-1/2">
-                      <div class="border-border/60 bg-accent/10 ring-accent/25 flex h-10 w-10 items-center justify-center rounded-full border ring-1 backdrop-blur-md">
-                        <div class="bg-accent h-2.5 w-2.5 rounded-full shadow-[0_0_0_8px_rgba(242,201,76,0.10)]" />
-                      </div>
+              {milestones.map((m, index) => (
+                <li id={m.id} class="relative py-6 pl-12 last:pb-0" data-motion="reveal">
+                  <div class="absolute top-8 left-4 -translate-x-1/2">
+                    <div class="border-border/60 bg-accent/10 ring-accent/25 flex h-10 w-10 items-center justify-center rounded-full border ring-1 backdrop-blur-md">
+                      <div class="bg-accent h-2.5 w-2.5 rounded-full shadow-[0_0_0_8px_rgba(242,201,76,0.10)]" />
+                    </div>
+                  </div>
+
+                  <article class="pt-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <Badge variant={m.cta ? 'neutral' : 'accent'}>{m.date}</Badge>
                     </div>
 
-                    <article class="pt-3">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <Badge variant={m.cta ? 'neutral' : 'accent'}>{m.date}</Badge>
+                    <h3 class="mt-3 text-lg font-semibold tracking-tight">{m.title}</h3>
+
+                    {m.paragraphs.map((p) => (
+                      <p class="text-muted mt-2 text-sm leading-relaxed">{p}</p>
+                    ))}
+
+                    {m.image ? (
+                      <Image
+                        src={m.image.src}
+                        alt={m.image.decorative ? '' : m.image.alt}
+                        aria-hidden={m.image.decorative ? 'true' : undefined}
+                        loading="lazy"
+                        decoding="async"
+                        sizes={m.image.sizes ?? '(min-width: 1024px) 42rem, 100vw'}
+                        widths={m.image.widths ?? [640, 960, 1280]}
+                        class="border-border/60 mt-4 aspect-[16/9] w-full rounded-[calc(var(--radius)-6px)] border object-cover"
+                      />
+                    ) : null}
+
+                    {m.cta ? (
+                      <div class="mt-4">
+                        <Button href={DISCORD_URL} external variant="primary" class="gap-2">
+                          Auf Discord dabei sein <ArrowRight size={18} />
+                        </Button>
                       </div>
+                    ) : null}
 
-                      <h3 class="mt-3 text-lg font-semibold tracking-tight">{m.title}</h3>
-
-                      {m.paragraphs.map((p) => (
-                        <p class="text-muted mt-2 text-sm leading-relaxed">{p}</p>
-                      ))}
-
-                      {m.image ? (
-                        <Image
-                          src={m.image.src}
-                          alt={m.image.decorative ? '' : m.image.alt}
-                          aria-hidden={m.image.decorative ? 'true' : undefined}
-                          loading="lazy"
-                          decoding="async"
-                          sizes={m.image.sizes ?? '(min-width: 1024px) 42rem, 100vw'}
-                          widths={m.image.widths ?? [640, 960, 1280]}
-                          class="border-border/60 mt-4 aspect-[16/9] w-full rounded-[calc(var(--radius)-6px)] border object-cover"
-                        />
-                      ) : null}
-
-                      {m.cta ? (
-                        <div class="mt-4">
-                          <Button href={DISCORD_URL} external variant="primary" class="gap-2">
-                            Auf Discord dabei sein <ArrowRight size={18} />
-                          </Button>
-                        </div>
-                      ) : null}
-
-                      {index < milestones.length - 1 ? (
-                        <div
-                          class="border-border/55 mt-6 h-px [mask-image:linear-gradient(to_right,black_84%,transparent)]"
-                          aria-hidden="true"
-                        />
-                      ) : null}
-                    </article>
-                  </li>
-                ))
-              }
+                    {index < milestones.length - 1 ? (
+                      <div
+                        class="border-border/55 mt-6 h-px [mask-image:linear-gradient(to_right,black_84%,transparent)]"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                  </article>
+                </li>
+              ))}
             </ol>
           </div>
         </Section>

@@ -18,8 +18,7 @@ const repoInfo = getRepoInfo({
     <div class="mx-auto max-w-6xl px-4 py-10">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="text-muted text-sm">
-          &copy; {year}{' '}
-          <span class="text-fg/90 font-medium">{FOOTER_COPY.owner}</span>
+          &copy; {year} <span class="text-fg/90 font-medium">{FOOTER_COPY.owner}</span>
           <span class="text-fg/60"> &middot; {FOOTER_COPY.brand}</span>
         </div>
 
@@ -30,42 +29,38 @@ const repoInfo = getRepoInfo({
             linkClass="text-fg/80 hover:text-fg hover:decoration-accent/60 underline decoration-transparent underline-offset-4 transition-colors"
           />
 
-          {
-            repoInfo.repoUrl ? (
-              <div class="text-fg/60 text-xs sm:text-right">
-                <NavItem
-                  href={repoInfo.repoUrl}
-                  external
-                  class="hover:text-fg hover:decoration-accent/50 underline decoration-transparent underline-offset-4 transition-colors"
-                >
-                  {repoInfo.repoLabel}
-                </NavItem>
+          {repoInfo.repoUrl ? (
+            <div class="text-fg/60 text-xs sm:text-right">
+              <NavItem
+                href={repoInfo.repoUrl}
+                external
+                class="hover:text-fg hover:decoration-accent/50 underline decoration-transparent underline-offset-4 transition-colors"
+              >
+                {repoInfo.repoLabel}
+              </NavItem>
 
-                {repoInfo.showCommit ? (
-                  <>
-                    <span aria-hidden="true"> {' @ '} </span>
-                    {repoInfo.commitHref ? (
-                      <NavItem
-                        href={repoInfo.commitHref}
-                        external
-                        class="hover:text-fg hover:decoration-accent/50 underline decoration-transparent underline-offset-4 transition-colors"
-                      >
-                        {repoInfo.shortCommit || repoInfo.commitHash}
-                      </NavItem>
-                    ) : (
-                      <span>{repoInfo.shortCommit || repoInfo.commitHash}</span>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            ) : null
-          }
+              {repoInfo.showCommit ? (
+                <>
+                  <span aria-hidden="true"> {' @ '} </span>
+                  {repoInfo.commitHref ? (
+                    <NavItem
+                      href={repoInfo.commitHref}
+                      external
+                      class="hover:text-fg hover:decoration-accent/50 underline decoration-transparent underline-offset-4 transition-colors"
+                    >
+                      {repoInfo.shortCommit || repoInfo.commitHash}
+                    </NavItem>
+                  ) : (
+                    <span>{repoInfo.shortCommit || repoInfo.commitHash}</span>
+                  )}
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <p class="text-muted mt-4 text-xs">
-        {FOOTER_COPY.disclaimer}
-      </p>
+      <p class="text-muted mt-4 text-xs">{FOOTER_COPY.disclaimer}</p>
     </div>
   </div>
 </footer>

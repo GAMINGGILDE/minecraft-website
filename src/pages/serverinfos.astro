@@ -59,9 +59,9 @@ const articleLd = buildArticle({
       <Button href={DISCORD_URL} external variant="secondary" class="gap-2">
         Discord <ArrowRight size={18} />
       </Button>
-      <Button href={DYNMAP_URL} external variant="ghost" class="gap-2"
-        ><Map size={18} /> Live-Karte</Button
-      >
+      <Button href={DYNMAP_URL} external variant="ghost" class="gap-2">
+        <Map size={18} /> Live-Karte
+      </Button>
     </Fragment>
 
     <div class="mt-6 flex flex-wrap gap-2">
@@ -90,28 +90,36 @@ const articleLd = buildArticle({
           </div>
           <dl class="mg-list mt-3 text-sm">
             <div class="mg-row items-center">
-              <dt class="text-muted">Server-IP</dt><dd class="font-semibold">{SERVER_IP}</dd>
+              <dt class="text-muted">Server-IP</dt>
+              <dd class="font-semibold">{SERVER_IP}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Edition</dt><dd>{SERVER.edition}</dd>
+              <dt class="text-muted">Edition</dt>
+              <dd>{SERVER.edition}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Minecraft-Version</dt><dd>{MINECRAFT_VERSION}</dd>
+              <dt class="text-muted">Minecraft-Version</dt>
+              <dd>{MINECRAFT_VERSION}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Server-Software</dt><dd>{SERVER.software}</dd>
+              <dt class="text-muted">Server-Software</dt>
+              <dd>{SERVER.software}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Spielweise</dt><dd>{SERVER.gameMode}</dd>
+              <dt class="text-muted">Spielweise</dt>
+              <dd>{SERVER.gameMode}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Hauptwelt</dt><dd>dauerhaft, seit {SERVER.mainWorldSince}</dd>
+              <dt class="text-muted">Hauptwelt</dt>
+              <dd>dauerhaft, seit {SERVER.mainWorldSince}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Whitelist</dt><dd>{SERVER.whitelist ? 'Ja' : 'Nein'}</dd>
+              <dt class="text-muted">Whitelist</dt>
+              <dd>{SERVER.whitelist ? 'Ja' : 'Nein'}</dd>
             </div>
             <div class="mg-row items-center">
-              <dt class="text-muted">Pay2Win</dt><dd>{SERVER.payToWin ? 'Ja' : 'Nein'}</dd>
+              <dt class="text-muted">Pay2Win</dt>
+              <dd>{SERVER.payToWin ? 'Ja' : 'Nein'}</dd>
             </div>
           </dl>
         </section>
@@ -156,30 +164,35 @@ const articleLd = buildArticle({
           </div>
           <DividerList as="ul" class="text-muted mt-3 list-none pl-0 text-sm">
             <li class="mg-row !block">
-              <span class="text-fg/90 font-medium">Sichtweite:</span> Die serverseitige Sichtweite beträgt
-              20 Chunks.
+              <span class="text-fg/90 font-medium">Sichtweite:</span> Die serverseitige Sichtweite
+              beträgt 20 Chunks.
             </li>
             <li class="mg-row !block">
-              <span class="text-fg/90 font-medium">Spawnraten:</span> Wir halten die Spawnraten möglichst
-              vanilla-nah.
+              <span class="text-fg/90 font-medium">Spawnraten:</span> Wir halten die Spawnraten
+              möglichst vanilla-nah.
             </li>
             <li class="mg-row !block">
-              <span class="text-fg/90 font-medium">Mobs, Villager &amp; Farmen:</span> Auch große Survival-Farmen
-              sind grundsätzlich erlaubt, solange sie keine merklichen Server-Lags verursachen. Für Mobs,
-              Villager und normale Survival-Farmen gibt es keine pauschalen künstlichen Limits.
+              <span class="text-fg/90 font-medium">Mobs, Villager &amp; Farmen:</span> Auch große
+              Survival-Farmen sind grundsätzlich erlaubt, solange sie keine merklichen Server-Lags
+              verursachen. Für Mobs, Villager und normale Survival-Farmen gibt es keine pauschalen
+              künstlichen Limits.
             </li>
             <li class="mg-row !block">
-              <span class="text-fg/90 font-medium">Grundstücksschutz:</span> Mit Claims über GriefPrevention
-              schützt du deine Baugebiete vor unerlaubten Änderungen.
+              <span class="text-fg/90 font-medium">Grundstücksschutz:</span> Mit Claims über
+              GriefPrevention schützt du deine Baugebiete vor unerlaubten Änderungen.
             </li>
             <li class="mg-row !block">
-              <span class="text-fg/90 font-medium">Pay2Win:</span> Die Minecraft Gilde ist kein Pay2Win-Server.
-              Es gibt keine kaufbaren Ränge, Items oder Gameplay-Vorteile.
+              <span class="text-fg/90 font-medium">Pay2Win:</span> Die Minecraft Gilde ist kein
+              Pay2Win-Server. Es gibt keine kaufbaren Ränge, Items oder Gameplay-Vorteile.
             </li>
           </DividerList>
           <div class="mt-4 flex flex-wrap gap-2">
-            <Button href="/tutorial" variant="secondary">Tutorial</Button>
-            <Button href="/regeln" variant="ghost">Regeln</Button>
+            <Button href="/tutorial" variant="secondary">
+              Tutorial
+            </Button>
+            <Button href="/regeln" variant="ghost">
+              Regeln
+            </Button>
           </div>
         </section>
       </div>
@@ -192,15 +205,14 @@ const articleLd = buildArticle({
             Spielkonzept der Minecraft Gilde.
           </p>
           <p>
-            Die heutige Hauptwelt besteht seit {SERVER.mainWorldSince} und ist für langfristige Bauprojekte
-            gedacht. Sie wird nicht regelmäßig zurückgesetzt.
+            Die heutige Hauptwelt besteht seit {SERVER.mainWorldSince} und ist für langfristige
+            Bauprojekte gedacht. Sie wird nicht regelmäßig zurückgesetzt.
           </p>
           <p>
-            Separate Farmwelten dienen der Rohstoffbeschaffung. {
-              SERVER.resourceWorldResets
-                ? 'Anders als die Hauptwelt werden sie zurückgesetzt; Informationen dazu teilen wir rechtzeitig.'
-                : 'Auch diese Welten bleiben bestehen und werden nicht regelmäßig zurückgesetzt.'
-            }
+            Separate Farmwelten dienen der Rohstoffbeschaffung.{' '}
+            {SERVER.resourceWorldResets
+              ? 'Anders als die Hauptwelt werden sie zurückgesetzt; Informationen dazu teilen wir rechtzeitig.'
+              : 'Auch diese Welten bleiben bestehen und werden nicht regelmäßig zurückgesetzt.'}
           </p>
         </div>
       </section>
@@ -251,7 +263,9 @@ const articleLd = buildArticle({
           du auch RTP, Rollen und alles Wichtige für deinen Start.
         </p>
         <div class="mt-3">
-          <Button href="/tutorial" variant="primary">Zum Tutorial</Button>
+          <Button href="/tutorial" variant="primary">
+            Zum Tutorial
+          </Button>
         </div>
       </div>
     </Section>

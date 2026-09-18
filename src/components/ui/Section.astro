@@ -39,33 +39,31 @@ const panelClass = variant ? variantClasses[variant] : '';
 ---
 
 <section id={id} class={sectionClass} data-tone={tone} data-variant={variant} {...rest}>
-  {
-    container ? (
-      <div class={`mg-container ${spacingClass} ${containerClass}`.trim()}>
-        {panelClass ? (
-          <div class={panelClass}>
-            <slot />
-          </div>
-        ) : (
+  {container ? (
+    <div class={`mg-container ${spacingClass} ${containerClass}`.trim()}>
+      {panelClass ? (
+        <div class={panelClass}>
           <slot />
-        )}
-      </div>
-    ) : padded ? (
-      <div class={`${spacingClass} ${containerClass}`.trim()}>
-        {panelClass ? (
-          <div class={panelClass}>
-            <slot />
-          </div>
-        ) : (
-          <slot />
-        )}
-      </div>
-    ) : panelClass ? (
-      <div class={panelClass}>
+        </div>
+      ) : (
         <slot />
-      </div>
-    ) : (
+      )}
+    </div>
+  ) : padded ? (
+    <div class={`${spacingClass} ${containerClass}`.trim()}>
+      {panelClass ? (
+        <div class={panelClass}>
+          <slot />
+        </div>
+      ) : (
+        <slot />
+      )}
+    </div>
+  ) : panelClass ? (
+    <div class={panelClass}>
       <slot />
-    )
-  }
+    </div>
+  ) : (
+    <slot />
+  )}
 </section>

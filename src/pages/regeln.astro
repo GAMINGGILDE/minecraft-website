@@ -43,9 +43,7 @@ const { warning, minecraft } = rules.data;
     <div class="grid gap-4" data-motion-stagger="80">
       <Card class="p-6 sm:p-7" reveal>
         <div class="flex items-center gap-4 sm:gap-5">
-          <div
-            class="border-border/70 bg-accent/10 text-accent flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border sm:h-14 sm:w-14"
-          >
+          <div class="border-border/70 bg-accent/10 text-accent flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border sm:h-14 sm:w-14">
             <Shield class="h-7 w-7" />
           </div>
           <h2 class="text-xl leading-tight font-semibold tracking-tight sm:text-2xl">
@@ -55,17 +53,12 @@ const { warning, minecraft } = rules.data;
 
         <div class="sm:ml-[4.75rem]">
           <DividerList as="ol" class="mt-5 list-decimal !pl-7 sm:!pl-8">
-            {
-              minecraft.items.map((it) => (
-                <li class="mg-list-item">
-                  <div class="text-sm font-semibold">{it.title}</div>
-                  <div
-                    class="mg-prose text-muted mt-2 text-sm leading-relaxed"
-                    set:html={it.html}
-                  />
-                </li>
-              ))
-            }
+            {minecraft.items.map((it) => (
+              <li class="mg-list-item">
+                <div class="text-sm font-semibold">{it.title}</div>
+                <div class="mg-prose text-muted mt-2 text-sm leading-relaxed" set:html={it.html} />
+              </li>
+            ))}
           </DividerList>
         </div>
       </Card>

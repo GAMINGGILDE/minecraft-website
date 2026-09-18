@@ -34,11 +34,9 @@ const legalPhoneHref = legal.phone ? `tel:${legal.phone.replace(/[^+\d]/g, '')}`
               <p class="text-fg font-semibold">{legal.name}</p>
               {legal.addressSupplement ? <p>{legal.addressSupplement}</p> : null}
               {legal.street ? <p>{legal.street}</p> : null}
-              {
-                legal.postalCode || legal.city ? (
-                  <p>{[legal.postalCode, legal.city].filter(Boolean).join(' ')}</p>
-                ) : null
-              }
+              {legal.postalCode || legal.city ? (
+                <p>{[legal.postalCode, legal.city].filter(Boolean).join(' ')}</p>
+              ) : null}
               {legal.country ? <p>{legal.country}</p> : null}
             </address>
           </section>
@@ -58,31 +56,27 @@ const legalPhoneHref = legal.phone ? `tel:${legal.phone.replace(/[^+\d]/g, '')}`
                     aria-label="E-Mail-Adresse"
                   >
                     <span class="js-email-text">
-                      {
-                        legalEmailUser && legalEmailDomain
-                          ? `${legalEmailUser} [at] ${legalEmailDomain}`
-                          : legal.email
-                      }
+                      {legalEmailUser && legalEmailDomain
+                        ? `${legalEmailUser} [at] ${legalEmailDomain}`
+                        : legal.email}
                     </span>
                   </a>
                 </dd>
               </div>
 
-              {
-                legal.phone ? (
-                  <div>
-                    <dt class="text-fg font-semibold">Telefon</dt>
-                    <dd class="text-muted mt-1">
-                      <a
-                        class="hover:text-fg underline underline-offset-4"
-                        href={legalPhoneHref ?? '#'}
-                      >
-                        {legal.phone}
-                      </a>
-                    </dd>
-                  </div>
-                ) : null
-              }
+              {legal.phone ? (
+                <div>
+                  <dt class="text-fg font-semibold">Telefon</dt>
+                  <dd class="text-muted mt-1">
+                    <a
+                      class="hover:text-fg underline underline-offset-4"
+                      href={legalPhoneHref ?? '#'}
+                    >
+                      {legal.phone}
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </section>
         </div>

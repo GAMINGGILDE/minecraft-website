@@ -26,46 +26,10 @@ const hasSubtitle = Astro.slots.has('subtitle');
 ---
 
 <section class={`mg-container pt-12 pb-6 ${className}`.trim()}>
-  {
-    actionsInline ? (
-      <>
-        <div class={headerClass}>
-          <div>
-            <h1 class="text-3xl font-semibold tracking-tight" data-motion="reveal">
-              {title}
-            </h1>
-            {hasSubtitle ? (
-              <p class={subtitleClass} data-motion="reveal" data-motion-delay="70">
-                <slot name="subtitle" />
-              </p>
-            ) : (
-              subtitle && (
-                <p class={subtitleClass} data-motion="reveal" data-motion-delay="70">
-                  {subtitle}
-                </p>
-              )
-            )}
-          </div>
-          {hasActions && (
-            <div class={actionsClass} data-motion="reveal" data-motion-delay="120">
-              <slot name="actions" />
-            </div>
-          )}
-        </div>
-        {hasBeforeActions && (
-          <div data-motion="reveal" data-motion-delay="160">
-            <slot name="beforeActions" />
-          </div>
-        )}
-        {hasContent && (
-          <div data-motion="reveal" data-motion-delay="200">
-            <slot />
-          </div>
-        )}
-      </>
-    ) : (
-      <>
-        <div class={headerClass}>
+  {actionsInline ? (
+    <>
+      <div class={headerClass}>
+        <div>
           <h1 class="text-3xl font-semibold tracking-tight" data-motion="reveal">
             {title}
           </h1>
@@ -81,22 +45,56 @@ const hasSubtitle = Astro.slots.has('subtitle');
             )
           )}
         </div>
-        {hasBeforeActions && (
-          <div data-motion="reveal" data-motion-delay="160">
-            <slot name="beforeActions" />
-          </div>
-        )}
         {hasActions && (
           <div class={actionsClass} data-motion="reveal" data-motion-delay="120">
             <slot name="actions" />
           </div>
         )}
-        {hasContent && (
-          <div data-motion="reveal" data-motion-delay="200">
-            <slot />
-          </div>
+      </div>
+      {hasBeforeActions && (
+        <div data-motion="reveal" data-motion-delay="160">
+          <slot name="beforeActions" />
+        </div>
+      )}
+      {hasContent && (
+        <div data-motion="reveal" data-motion-delay="200">
+          <slot />
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      <div class={headerClass}>
+        <h1 class="text-3xl font-semibold tracking-tight" data-motion="reveal">
+          {title}
+        </h1>
+        {hasSubtitle ? (
+          <p class={subtitleClass} data-motion="reveal" data-motion-delay="70">
+            <slot name="subtitle" />
+          </p>
+        ) : (
+          subtitle && (
+            <p class={subtitleClass} data-motion="reveal" data-motion-delay="70">
+              {subtitle}
+            </p>
+          )
         )}
-      </>
-    )
-  }
+      </div>
+      {hasBeforeActions && (
+        <div data-motion="reveal" data-motion-delay="160">
+          <slot name="beforeActions" />
+        </div>
+      )}
+      {hasActions && (
+        <div class={actionsClass} data-motion="reveal" data-motion-delay="120">
+          <slot name="actions" />
+        </div>
+      )}
+      {hasContent && (
+        <div data-motion="reveal" data-motion-delay="200">
+          <slot />
+        </div>
+      )}
+    </>
+  )}
 </section>

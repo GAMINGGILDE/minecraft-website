@@ -19,13 +19,11 @@ const showIcon = icon || hasIcon;
 
 <div class={`mg-callout ${className}`.trim()} data-variant={variant} {...rest}>
   <div class="flex items-start gap-3">
-    {
-      showIcon && (
-        <div class="mg-callout__icon" aria-hidden="true">
-          {hasIcon ? <slot name="icon" /> : <DefaultIcon size={18} />}
-        </div>
-      )
-    }
+    {showIcon && (
+      <div class="mg-callout__icon" aria-hidden="true">
+        {hasIcon ? <slot name="icon" /> : <DefaultIcon size={18} />}
+      </div>
+    )}
     <div class="min-w-0">
       {title && <p class="mg-callout__title mb-1 text-sm font-semibold">{title}</p>}
       <div class="mg-callout__content text-sm">

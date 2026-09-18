@@ -96,23 +96,21 @@ const sections = await Promise.all(
       <Button variant="primary" class="gap-2" data-copy-ip>
         <Download size={18} /> Jetzt Spielen
       </Button>
-      {
-        tutorialHeaderActions.map((action) => {
-          const Icon = action.icon ? ACTION_ICONS[action.icon as ActionIconName] : null;
+      {tutorialHeaderActions.map((action) => {
+        const Icon = action.icon ? ACTION_ICONS[action.icon as ActionIconName] : null;
 
-          return (
-            <Button
-              href={resolveTutorialLink(action.target)}
-              external={isTutorialExternalTarget(action.target)}
-              variant={action.variant}
-              class="gap-2"
-            >
-              {action.label}
-              {Icon && <Icon size={18} />}
-            </Button>
-          );
-        })
-      }
+        return (
+          <Button
+            href={resolveTutorialLink(action.target)}
+            external={isTutorialExternalTarget(action.target)}
+            variant={action.variant}
+            class="gap-2"
+          >
+            {action.label}
+            {Icon && <Icon size={18} />}
+          </Button>
+        );
+      })}
     </Fragment>
   </PageHeader>
 
@@ -129,83 +127,77 @@ const sections = await Promise.all(
       </Callout>
 
       <ol class="mg-tutorial-quickstart__steps mt-4 list-decimal space-y-2 pl-5 text-sm">
-        {
-          tutorialQuickstart.steps.map((step) => (
-            <li>
-              <span class="text-fg/90 font-medium">{step.title}</span>:{' '}
-              {formatQuickstartText(step.text).map((part) =>
-                isQuickstartCommand(part) ? <code>{part}</code> : part,
-              )}
-            </li>
-          ))
-        }
+        {tutorialQuickstart.steps.map((step) => (
+          <li>
+            <span class="text-fg/90 font-medium">{step.title}</span>:{' '}
+            {formatQuickstartText(step.text).map((part) =>
+              isQuickstartCommand(part) ? <code>{part}</code> : part,
+            )}
+          </li>
+        ))}
       </ol>
 
       <div class="mt-5 flex flex-wrap gap-2">
-        {
-          tutorialQuickstartActions.map((action) => {
-            const Icon = action.icon ? ACTION_ICONS[action.icon as ActionIconName] : null;
+        {tutorialQuickstartActions.map((action) => {
+          const Icon = action.icon ? ACTION_ICONS[action.icon as ActionIconName] : null;
 
-            return (
-              <Button
-                href={resolveTutorialLink(action.target)}
-                external={isTutorialExternalTarget(action.target)}
-                variant={action.variant}
-                class="gap-2"
-              >
-                {Icon && <Icon size={18} />}
-                {action.label}
-              </Button>
-            );
-          })
-        }
+          return (
+            <Button
+              href={resolveTutorialLink(action.target)}
+              external={isTutorialExternalTarget(action.target)}
+              variant={action.variant}
+              class="gap-2"
+            >
+              {Icon && <Icon size={18} />}
+              {action.label}
+            </Button>
+          );
+        })}
       </div>
     </section>
 
     <div class="mt-6 space-y-3" data-motion-stagger="55">
-      {
-        sections.map((section) => {
-          const SectionIcon = SECTION_ICONS[section.icon as SectionIconName];
+      {sections.map((section) => {
+        const SectionIcon = SECTION_ICONS[section.icon as SectionIconName];
 
-          return (
-            <details class="mg-accordion" open={section.open} data-motion="reveal">
-              <summary class="flex items-center justify-between gap-3">
-                <span class="inline-flex items-center gap-2 text-sm font-semibold">
-                  <SectionIcon size={18} /> {section.title}
-                </span>
-                <span class="text-muted text-xs">{section.meta}</span>
-              </summary>
+        return (
+          <details class="mg-accordion" open={section.open} data-motion="reveal">
+            <summary class="flex items-center justify-between gap-3">
+              <span class="inline-flex items-center gap-2 text-sm font-semibold">
+                <SectionIcon size={18} /> {section.title}
+              </span>
+              <span class="text-muted text-xs">{section.meta}</span>
+            </summary>
 
-              <div class="mg-prose mt-4">
-                <section.Content />
-                {section.order === 5 ? <TutorialRoleCards /> : null}
+            <div class="mg-prose mt-4">
+              <section.Content />
+              {section.order === 5 ? <TutorialRoleCards /> : null}
+            </div>
+
+            {section.actions?.length ? (
+              <div class="mt-3 flex flex-wrap gap-2">
+                {section.actions.map((action) => {
+                  const ActionIcon = action.icon
+                    ? ACTION_ICONS[action.icon as ActionIconName]
+                    : null;
+
+                  return (
+                    <Button
+                      href={resolveTutorialLink(action.target)}
+                      external={isTutorialExternalTarget(action.target)}
+                      variant={action.variant}
+                      class="gap-2"
+                    >
+                      {ActionIcon && <ActionIcon size={18} />}
+                      {action.label}
+                    </Button>
+                  );
+                })}
               </div>
-
-              {section.actions?.length ? (
-                <div class="mt-3 flex flex-wrap gap-2">
-                  {section.actions.map((action) => {
-                    const ActionIcon = action.icon
-                      ? ACTION_ICONS[action.icon as ActionIconName]
-                      : null;
-
-                    return (
-                      <Button
-                        href={resolveTutorialLink(action.target)}
-                        external={isTutorialExternalTarget(action.target)}
-                        variant={action.variant}
-                        class="gap-2"
-                      >
-                        {ActionIcon && <ActionIcon size={18} />}
-                        {action.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </details>
-          );
-        })
-      }
+            ) : null}
+          </details>
+        );
+      })}
 
       <Callout
         variant={tutorialFinalCallout.variant}

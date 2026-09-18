@@ -11,31 +11,33 @@ const ROLE_ICONS = {
 ---
 
 <div class="tutorial-roles" role="list" aria-label="Serverrollen">
-  {
-    tutorialRoles.map((role) => {
-      const Icon = ROLE_ICONS[role.icon];
+  {tutorialRoles.map((role) => {
+    const Icon = ROLE_ICONS[role.icon];
 
-      return (
-        <article class="tutorial-role" data-role={role.key} role="listitem">
-          <div class="tutorial-role__head">
-            <span class="tutorial-role__icon" aria-hidden="true">
-              <Icon size={14} />
-            </span>
-            <p class="tutorial-role__name">{role.label}</p>
-          </div>
-          <p class="tutorial-role__text">{role.description}</p>
-        </article>
-      );
-    })
-  }
+    return (
+      <article class="tutorial-role" data-role={role.key} role="listitem">
+        <div class="tutorial-role__head">
+          <span class="tutorial-role__icon" aria-hidden="true">
+            <Icon size={14} />
+          </span>
+          <p class="tutorial-role__name">{role.label}</p>
+        </div>
+        <p class="tutorial-role__text">{role.description}</p>
+      </article>
+    );
+  })}
 </div>
 
 <p>Wenn du Hilfe brauchst:</p>
 
 <ul>
   <li>Team im Chat anschreiben.</li>
-  <li>Privat mit <code>/msg &lt;Spieler&gt; &lt;Nachricht&gt;</code>.</li>
-  <li>Dringend mit <code>/helpop &lt;Nachricht&gt;</code>.</li>
+  <li>
+    Privat mit <code>/msg &lt;Spieler&gt; &lt;Nachricht&gt;</code>.
+  </li>
+  <li>
+    Dringend mit <code>/helpop &lt;Nachricht&gt;</code>.
+  </li>
 </ul>
 
 <p>Für längere Themen kannst du jederzeit auf Discord schreiben.</p>

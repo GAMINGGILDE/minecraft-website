@@ -35,55 +35,57 @@ const groupIconByKey = {
       <Button href={DISCORD_URL} external variant="primary" class="gap-2">
         Discord <ArrowRight size={18} />
       </Button>
-      <Button href="/tutorial" variant="secondary">Tutorial</Button>
-      <Button href="/regeln" variant="ghost">Regeln</Button>
+      <Button href="/tutorial" variant="secondary">
+        Tutorial
+      </Button>
+      <Button href="/regeln" variant="ghost">
+        Regeln
+      </Button>
     </Fragment>
   </PageHeader>
 
   <section class="mg-container pb-16">
     <div class="grid gap-4" data-motion-stagger="90">
-      {
-        groups.map((g) => {
-          const GroupIcon = groupIconByKey[g.key];
+      {groups.map((g) => {
+        const GroupIcon = groupIconByKey[g.key];
 
-          return (
-            <section class="mg-card mg-card--soft p-6" data-motion="reveal">
-              <div class="flex items-center justify-between gap-4">
-                <div class="inline-flex items-center gap-2">
-                  <GroupIcon size={18} />
-                  <h2 class="text-xl font-semibold tracking-tight">{g.label}</h2>
-                </div>
-                <Badge variant="accent">{g.members.length}</Badge>
+        return (
+          <section class="mg-card mg-card--soft p-6" data-motion="reveal">
+            <div class="flex items-center justify-between gap-4">
+              <div class="inline-flex items-center gap-2">
+                <GroupIcon size={18} />
+                <h2 class="text-xl font-semibold tracking-tight">{g.label}</h2>
               </div>
+              <Badge variant="accent">{g.members.length}</Badge>
+            </div>
 
-              <DividerList as="ul" class="mt-4">
-                {g.members.map((m) => (
-                  <li class="mg-row flex items-center gap-3 py-3">
-                    <div class="flex min-w-0 items-center gap-3">
-                      <img
-                        src={buildCraftheadHelmUrl(m.uuid, null, 96)}
-                        data-avatar-fallback={buildMcHeadsAvatarUrl(m.uuid, null, 96)}
-                        alt={m.inGameName}
-                        width="48"
-                        height="48"
-                        loading="lazy"
-                        decoding="async"
-                        class="border-border bg-surface h-12 w-12 rounded-full border"
-                      />
-                      <div class="min-w-0">
-                        <div class="truncate text-sm font-semibold">{m.inGameName}</div>
-                      </div>
+            <DividerList as="ul" class="mt-4">
+              {g.members.map((m) => (
+                <li class="mg-row flex items-center gap-3 py-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <img
+                      src={buildCraftheadHelmUrl(m.uuid, null, 96)}
+                      data-avatar-fallback={buildMcHeadsAvatarUrl(m.uuid, null, 96)}
+                      alt={m.inGameName}
+                      width="48"
+                      height="48"
+                      loading="lazy"
+                      decoding="async"
+                      class="border-border bg-surface h-12 w-12 rounded-full border"
+                    />
+                    <div class="min-w-0">
+                      <div class="truncate text-sm font-semibold">{m.inGameName}</div>
                     </div>
-                    <Badge variant="neutral" class="shrink-0">
-                      {m.role}
-                    </Badge>
-                  </li>
-                ))}
-              </DividerList>
-            </section>
-          );
-        })
-      }
+                  </div>
+                  <Badge variant="neutral" class="shrink-0">
+                    {m.role}
+                  </Badge>
+                </li>
+              ))}
+            </DividerList>
+          </section>
+        );
+      })}
     </div>
   </section>
 
