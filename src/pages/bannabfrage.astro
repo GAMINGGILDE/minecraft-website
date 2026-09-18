@@ -29,11 +29,11 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
     <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
       <article class="mg-card mg-card--soft min-w-0 p-4 sm:p-7" data-motion="reveal">
         <form class="space-y-3" data-ban-form>
-          <label for="ban-query-input" class="text-sm font-medium">Spielername oder UUID</label>
+          <label for="ban-query-input" class="text-sm font-medium">
+            Spielername oder UUID
+          </label>
           <div class="flex min-w-0 flex-col items-stretch gap-2 sm:flex-row">
-            <div
-              class="mg-app-field mg-app-field--muted-focus mg-app-search-field min-w-0 sm:flex-1"
-            >
+            <div class="mg-app-field mg-app-field--muted-focus mg-app-search-field min-w-0 sm:flex-1">
               <Search size={18} class="text-muted" />
               <input
                 id="ban-query-input"
@@ -93,8 +93,11 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
 
           <article class="mg-notice" data-variant="neutral" data-ban-view="unknown" hidden>
             <div class="mg-notice__content">
-              Der Spieler <strong class="break-all" data-ban-query-value>Unbekannt</strong> hat unseren
-              Server noch nie besucht.
+              Der Spieler{' '}
+              <strong class="break-all" data-ban-query-value>
+                Unbekannt
+              </strong>{' '}
+              hat unseren Server noch nie besucht.
             </div>
           </article>
 
@@ -103,15 +106,14 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
               <p class="font-semibold">Der Spieler ist nicht gebannt.</p>
               <dl class="mg-list mt-3 text-sm">
                 <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                  <dt class="text-muted shrink-0">Spieler</dt><dd
-                    class="m-0 max-w-full min-w-0 break-words sm:text-right"
-                    data-ban-player-name
-                  >
+                  <dt class="text-muted shrink-0">Spieler</dt>
+                  <dd class="m-0 max-w-full min-w-0 break-words sm:text-right" data-ban-player-name>
                     -
                   </dd>
                 </div>
                 <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                  <dt class="text-muted shrink-0">UUID</dt><dd
+                  <dt class="text-muted shrink-0">UUID</dt>
+                  <dd
                     class="m-0 max-w-full min-w-0 font-mono text-xs break-all sm:text-right"
                     data-ban-player-uuid
                   >
@@ -119,7 +121,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                   </dd>
                 </div>
                 <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                  <dt class="text-muted shrink-0">Quelle</dt><dd
+                  <dt class="text-muted shrink-0">Quelle</dt>
+                  <dd
                     class="m-0 max-w-full min-w-0 break-words sm:text-right"
                     data-ban-player-source
                   >
@@ -127,7 +130,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                   </dd>
                 </div>
                 <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                  <dt class="text-muted shrink-0">Erst gesehen</dt><dd
+                  <dt class="text-muted shrink-0">Erst gesehen</dt>
+                  <dd
                     class="m-0 max-w-full min-w-0 break-words sm:text-right"
                     data-ban-player-first-seen
                   >
@@ -135,7 +139,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                   </dd>
                 </div>
                 <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                  <dt class="text-muted shrink-0">Zuletzt gesehen</dt><dd
+                  <dt class="text-muted shrink-0">Zuletzt gesehen</dt>
+                  <dd
                     class="m-0 max-w-full min-w-0 break-words sm:text-right"
                     data-ban-player-last-seen
                   >
@@ -150,7 +155,9 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
             <article class="mg-notice" data-ban-name-change-notice hidden>
               <div class="mg-notice__content space-y-3">
                 <div>
-                  <p class="font-semibold" data-ban-status-headline>Aktiver Bann gefunden.</p>
+                  <p class="font-semibold" data-ban-status-headline>
+                    Aktiver Bann gefunden.
+                  </p>
                   <p class="text-muted mt-1" data-ban-status-description>
                     Der Bannstatus wurde eindeutig zugeordnet.
                   </p>
@@ -183,7 +190,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                 <p class="font-semibold">Ban-Details</p>
                 <dl class="mg-list mt-3 text-sm">
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Spieler</dt><dd
+                    <dt class="text-muted shrink-0">Spieler</dt>
+                    <dd
                       class="m-0 max-w-full min-w-0 break-words sm:text-right"
                       data-ban-banned-player-name
                     >
@@ -191,7 +199,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">UUID</dt><dd
+                    <dt class="text-muted shrink-0">UUID</dt>
+                    <dd
                       class="m-0 max-w-full min-w-0 font-mono text-xs break-all sm:text-right"
                       data-ban-player-uuid
                     >
@@ -199,31 +208,26 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Grund</dt><dd
-                      class="m-0 max-w-full min-w-0 break-words sm:text-right"
-                      data-ban-reason
-                    >
+                    <dt class="text-muted shrink-0">Grund</dt>
+                    <dd class="m-0 max-w-full min-w-0 break-words sm:text-right" data-ban-reason>
                       -
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Gebannt von</dt><dd
-                      class="m-0 max-w-full min-w-0 break-words sm:text-right"
-                      data-ban-by
-                    >
+                    <dt class="text-muted shrink-0">Gebannt von</dt>
+                    <dd class="m-0 max-w-full min-w-0 break-words sm:text-right" data-ban-by>
                       -
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Gebannt am</dt><dd
-                      class="m-0 max-w-full min-w-0 break-words sm:text-right"
-                      data-ban-at
-                    >
+                    <dt class="text-muted shrink-0">Gebannt am</dt>
+                    <dd class="m-0 max-w-full min-w-0 break-words sm:text-right" data-ban-at>
                       -
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Läuft ab</dt><dd
+                    <dt class="text-muted shrink-0">Läuft ab</dt>
+                    <dd
                       class="m-0 max-w-full min-w-0 break-words sm:text-right"
                       data-ban-expires-at
                     >
@@ -231,7 +235,8 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
                     </dd>
                   </div>
                   <div class="mg-row flex-col gap-1 sm:flex-row sm:items-center">
-                    <dt class="text-muted shrink-0">Permanent</dt><dd
+                    <dt class="text-muted shrink-0">Permanent</dt>
+                    <dd
                       class="m-0 max-w-full min-w-0 break-words sm:text-right"
                       data-ban-is-permanent
                     >
@@ -262,16 +267,16 @@ const canonicalUrl = canonicalFor('/bannabfrage/');
         <h2 class="text-xl font-semibold tracking-tight">So liest du das Ergebnis</h2>
         <ul class="text-muted mt-4 space-y-3 text-sm leading-relaxed">
           <li>
-            <strong class="text-fg">Noch nie besucht:</strong> Es wurde kein Eintrag im bekannten Spielerbestand
-            gefunden.
+            <strong class="text-fg">Noch nie besucht:</strong> Es wurde kein Eintrag im bekannten
+            Spielerbestand gefunden.
           </li>
           <li>
-            <strong class="text-fg">Nicht gebannt:</strong> Der Spieler ist bekannt, aber es liegt kein
-            aktiver Bann vor.
+            <strong class="text-fg">Nicht gebannt:</strong> Der Spieler ist bekannt, aber es liegt
+            kein aktiver Bann vor.
           </li>
           <li>
-            <strong class="text-fg">Gebannt:</strong> Ein aktiver Bann wurde gefunden und die Banninformationen
-            werden angezeigt.
+            <strong class="text-fg">Gebannt:</strong> Ein aktiver Bann wurde gefunden und die
+            Banninformationen werden angezeigt.
           </li>
         </ul>
       </aside>

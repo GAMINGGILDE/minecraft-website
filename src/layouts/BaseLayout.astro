@@ -140,11 +140,9 @@ const ldBase = buildBaseGraph({
     <JsonLd data={ldBase} />
 
     <script is:inline src="/theme-bootstrap.js"></script>
-
     <script>
       import '../scripts/theme-color-sync.ts';
     </script>
-
     <slot name="head" />
   </head>
 
@@ -175,7 +173,9 @@ const ldBase = buildBaseGraph({
       import '../scripts/app.ts';
       import '../scripts/email-obfuscate.ts';
     </script>
-    {scripts.map((src) => <script src={src} defer is:inline />)}
+    {scripts.map((src) => (
+      <script src={src} defer is:inline></script>
+    ))}
     <slot name="afterScripts" />
   </body>
 </html>

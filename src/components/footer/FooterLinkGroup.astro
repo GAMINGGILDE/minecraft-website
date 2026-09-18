@@ -13,11 +13,9 @@ const { links, ariaLabel = 'Footer', class: className, linkClass } = Astro.props
 ---
 
 <nav aria-label={ariaLabel} class={className}>
-  {
-    links.map((link) => (
-      <NavItem href={link.href} external={link.external} class={linkClass}>
-        {link.label}
-      </NavItem>
-    ))
-  }
+  {links.map((link) => (
+    <NavItem href={link.href} external={link.external} class={linkClass}>
+      {link.label}
+    </NavItem>
+  ))}
 </nav>

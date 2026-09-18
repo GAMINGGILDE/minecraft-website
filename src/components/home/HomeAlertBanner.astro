@@ -15,51 +15,47 @@ const Icon = alert.variant === 'warning' ? TriangleAlert : Info;
 const ariaRole = alert.variant === 'warning' ? 'alert' : 'status';
 ---
 
-{
-  alert.enabled && (
-    <aside
-      class={`mg-callout px-4 py-4 sm:px-5 sm:py-5 ${className}`.trim()}
-      data-variant={alert.variant}
-      role={ariaRole}
-      aria-labelledby="home-alert-title"
-    >
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="flex min-w-0 gap-3">
-          <div class="mg-callout__icon" aria-hidden="true">
-            <Icon size={20} />
-          </div>
-          <div class="min-w-0">
-            <p class="text-muted text-[0.68rem] font-semibold tracking-[0.14em] uppercase">
-              {alert.eyebrow}
-            </p>
-            <h2 id="home-alert-title" class="mt-1 text-lg font-semibold tracking-tight">
-              {alert.title}
-            </h2>
-            <p class="mg-callout__content mt-2 max-w-3xl text-sm leading-relaxed">
-              {alert.message}
-            </p>
-            {alert.updatedAt && (
-              <p class="text-muted mt-2 text-xs font-medium">Stand: {alert.updatedAt}</p>
-            )}
-          </div>
+{alert.enabled && (
+  <aside
+    class={`mg-callout px-4 py-4 sm:px-5 sm:py-5 ${className}`.trim()}
+    data-variant={alert.variant}
+    role={ariaRole}
+    aria-labelledby="home-alert-title"
+  >
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex min-w-0 gap-3">
+        <div class="mg-callout__icon" aria-hidden="true">
+          <Icon size={20} />
         </div>
-
-        {alert.actions.length > 0 && (
-          <div class="flex flex-none flex-wrap gap-2 sm:justify-end">
-            {alert.actions.map((action) => (
-              <Button
-                href={action.href}
-                external={action.external}
-                variant="secondary"
-                size="sm"
-                class="w-full justify-center sm:w-auto"
-              >
-                {action.label}
-              </Button>
-            ))}
-          </div>
-        )}
+        <div class="min-w-0">
+          <p class="text-muted text-[0.68rem] font-semibold tracking-[0.14em] uppercase">
+            {alert.eyebrow}
+          </p>
+          <h2 id="home-alert-title" class="mt-1 text-lg font-semibold tracking-tight">
+            {alert.title}
+          </h2>
+          <p class="mg-callout__content mt-2 max-w-3xl text-sm leading-relaxed">{alert.message}</p>
+          {alert.updatedAt && (
+            <p class="text-muted mt-2 text-xs font-medium">Stand: {alert.updatedAt}</p>
+          )}
+        </div>
       </div>
-    </aside>
-  )
-}
+
+      {alert.actions.length > 0 && (
+        <div class="flex flex-none flex-wrap gap-2 sm:justify-end">
+          {alert.actions.map((action) => (
+            <Button
+              href={action.href}
+              external={action.external}
+              variant="secondary"
+              size="sm"
+              class="w-full justify-center sm:w-auto"
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  </aside>
+)}

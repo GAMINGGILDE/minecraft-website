@@ -21,9 +21,7 @@ const { items, class: className = '' } = Astro.props as Props;
 >
   <div class="mg-container">
     <div class="border-border/65 border-y px-2 py-2 sm:px-3 sm:py-3">
-      <p
-        class="text-muted mb-2 inline-flex items-center gap-2 px-2 text-[0.68rem] font-semibold tracking-[0.16em] uppercase"
-      >
+      <p class="text-muted mb-2 inline-flex items-center gap-2 px-2 text-[0.68rem] font-semibold tracking-[0.16em] uppercase">
         <Navigation size={14} class="text-accent shrink-0" aria-hidden="true" />
         Schnellnavigation
       </p>
@@ -33,22 +31,20 @@ const { items, class: className = '' } = Astro.props as Props;
           class="flex w-max min-w-full items-center justify-center gap-3 px-2 whitespace-nowrap sm:gap-4"
           role="list"
         >
-          {
-            items.map((item, index) => (
-              <li class="flex items-center gap-3 sm:gap-4">
-                {index > 0 && (
-                  <ChevronRight size={12} class="text-muted/60 shrink-0" aria-hidden="true" />
-                )}
-                <a
-                  href={item.href}
-                  aria-label={`Zu ${item.label} springen`}
-                  class="decoration-accent/70 text-fg/82 hover:text-accent focus-visible:text-accent inline-flex items-center px-0.5 text-sm font-semibold transition-colors hover:underline hover:underline-offset-4 focus-visible:underline focus-visible:underline-offset-4 focus-visible:outline-none"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))
-          }
+          {items.map((item, index) => (
+            <li class="flex items-center gap-3 sm:gap-4">
+              {index > 0 && (
+                <ChevronRight size={12} class="text-muted/60 shrink-0" aria-hidden="true" />
+              )}
+              <a
+                href={item.href}
+                aria-label={`Zu ${item.label} springen`}
+                class="decoration-accent/70 text-fg/82 hover:text-accent focus-visible:text-accent inline-flex items-center px-0.5 text-sm font-semibold transition-colors hover:underline hover:underline-offset-4 focus-visible:underline focus-visible:underline-offset-4 focus-visible:outline-none"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

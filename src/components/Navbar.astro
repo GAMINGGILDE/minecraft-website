@@ -104,42 +104,38 @@ const linkClassMega = (active: boolean) =>
       </a>
 
       <nav class="hidden items-center gap-1 md:flex" aria-label="Hauptnavigation">
-        {
-          NAV_PRIMARY_LINKS.map((item) => {
-            const active = isActive(item.href, item.external);
+        {NAV_PRIMARY_LINKS.map((item) => {
+          const active = isActive(item.href, item.external);
 
-            return (
-              <NavItem
-                href={item.href}
-                external={item.external}
-                ariaCurrent={active ? 'page' : undefined}
-                class={linkClassDesktop(active)}
-              >
-                {item.label}
-              </NavItem>
-            );
-          })
-        }
+          return (
+            <NavItem
+              href={item.href}
+              external={item.external}
+              ariaCurrent={active ? 'page' : undefined}
+              class={linkClassDesktop(active)}
+            >
+              {item.label}
+            </NavItem>
+          );
+        })}
       </nav>
 
       <div class="site-nav-controls relative flex min-w-0 items-center">
         <div class="site-nav-socials hidden items-center gap-1 lg:flex" aria-label="Social Links">
-          {
-            NAV_SOCIAL_LINKS.map((item) => (
-              <NavItem
-                href={item.href}
-                external={item.external}
-                ariaLabel={item.label}
-                showExternalHint={false}
-                class="site-nav-social-link"
-              >
-                <svg viewBox="0 0 127.14 96.36" aria-hidden="true">
-                  <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
-                </svg>
-                <span class="sr-only">{item.label}</span>
-              </NavItem>
-            ))
-          }
+          {NAV_SOCIAL_LINKS.map((item) => (
+            <NavItem
+              href={item.href}
+              external={item.external}
+              ariaLabel={item.label}
+              showExternalHint={false}
+              class="site-nav-social-link"
+            >
+              <svg viewBox="0 0 127.14 96.36" aria-hidden="true">
+                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
+              </svg>
+              <span class="sr-only">{item.label}</span>
+            </NavItem>
+          ))}
         </div>
 
         <span class="site-nav-separator site-nav-separator--desktop" aria-hidden="true"></span>
@@ -177,71 +173,60 @@ const linkClassMega = (active: boolean) =>
           <div
             class="mg-glass-overlay fixed top-[var(--site-nav-offset)] right-0 bottom-0 left-0 z-40 hidden md:hidden"
             data-nav-overlay
-          >
-          </div>
+          ></div>
 
-          <div
-            class="fixed top-[var(--site-nav-offset)] right-0 left-0 z-50 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:absolute md:top-2 md:right-0 md:left-auto md:w-[min(23rem,calc(100vw-2rem))] md:px-0 md:pb-0"
-          >
-            <div
-              class="site-nav-solid-card mg-card mg-card--raised relative overflow-hidden rounded-[var(--radius)] shadow-lg md:shadow-2xl"
-            >
-              <div
-                class="mg-scrollbar max-h-[calc(100dvh-6rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 md:max-h-[calc(100dvh-9rem)] md:p-3"
-              >
+          <div class="fixed top-[var(--site-nav-offset)] right-0 left-0 z-50 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:absolute md:top-2 md:right-0 md:left-auto md:w-[min(23rem,calc(100vw-2rem))] md:px-0 md:pb-0">
+            <div class="site-nav-solid-card mg-card mg-card--raised relative overflow-hidden rounded-[var(--radius)] shadow-lg md:shadow-2xl">
+              <div class="mg-scrollbar max-h-[calc(100dvh-6rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 md:max-h-[calc(100dvh-9rem)] md:p-3">
                 <div class="space-y-4">
-                  {
-                    NAV_MEGA_MENU_SECTIONS.map((section, sectionIndex) => (
-                      <section
-                        class:list={[
-                          sectionIndex > 0 ? 'border-border/70 mt-4 border-t pt-4' : undefined,
-                        ]}
-                      >
-                        <h2 class="text-muted text-[11px] font-semibold tracking-[0.14em] uppercase">
-                          {section.title}
-                        </h2>
-                        <div class="mt-2 grid grid-cols-2 gap-0.5">
-                          {section.items.map((item) => {
-                            const Icon = MENU_ICONS[item.icon];
-                            const active = isActive(item.href, item.external);
+                  {NAV_MEGA_MENU_SECTIONS.map((section, sectionIndex) => (
+                    <section
+                      class:list={[
+                        sectionIndex > 0 ? 'border-border/70 mt-4 border-t pt-4' : undefined,
+                      ]}
+                    >
+                      <h2 class="text-muted text-[11px] font-semibold tracking-[0.14em] uppercase">
+                        {section.title}
+                      </h2>
+                      <div class="mt-2 grid grid-cols-2 gap-0.5">
+                        {section.items.map((item) => {
+                          const Icon = MENU_ICONS[item.icon];
+                          const active = isActive(item.href, item.external);
 
-                            return (
-                              <NavItem
-                                href={item.href}
-                                external={item.external}
-                                ariaCurrent={active ? 'page' : undefined}
-                                showExternalHint={false}
-                                class={linkClassMega(active)}
+                          return (
+                            <NavItem
+                              href={item.href}
+                              external={item.external}
+                              ariaCurrent={active ? 'page' : undefined}
+                              showExternalHint={false}
+                              class={linkClassMega(active)}
+                            >
+                              <span
+                                class:list={[
+                                  'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors md:h-7 md:w-7',
+                                  active ? 'text-accent' : 'text-muted group-hover:text-accent',
+                                ]}
                               >
-                                <span
-                                  class:list={[
-                                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors md:h-7 md:w-7',
-                                    active ? 'text-accent' : 'text-muted group-hover:text-accent',
-                                  ]}
-                                >
-                                  <Icon size={14} />
-                                </span>
-                                <span class="inline-flex min-w-0 items-center gap-1.5">
-                                  <span class="truncate">{item.label}</span>
-                                  {item.external ? (
-                                    <ExternalLink size={13} class="shrink-0 opacity-70" />
-                                  ) : null}
-                                </span>
-                                {item.external ? <span class="sr-only"> (extern)</span> : null}
-                              </NavItem>
-                            );
-                          })}
-                        </div>
-                      </section>
-                    ))
-                  }
+                                <Icon size={14} />
+                              </span>
+                              <span class="inline-flex min-w-0 items-center gap-1.5">
+                                <span class="truncate">{item.label}</span>
+                                {item.external ? (
+                                  <ExternalLink size={13} class="shrink-0 opacity-70" />
+                                ) : null}
+                              </span>
+                              {item.external ? <span class="sr-only"> (extern)</span> : null}
+                            </NavItem>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
 
                 <div class="bg-border/70 mt-4 h-px"></div>
 
-                <div
-                  class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                >
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
                     href={NAV_DISCORD_LINK.href}
                     external
@@ -255,7 +240,10 @@ const linkClassMega = (active: boolean) =>
                   </Button>
 
                   <p class="text-muted text-[11px] sm:text-xs">
-                    <span class="text-fg tabular-nums" data-discord-members>-</span> Mitglieder auf Discord
+                    <span class="text-fg tabular-nums" data-discord-members>
+                      -
+                    </span>{' '}
+                    Mitglieder auf Discord
                   </p>
                 </div>
               </div>

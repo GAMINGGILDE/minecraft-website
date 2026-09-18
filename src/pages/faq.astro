@@ -67,41 +67,39 @@ const DISCORD_URL = minecraftGilde.discord.url;
 
   <section class="mg-container pb-16">
     <div class="mg-card mg-card--soft divide-border/70 divide-y" data-motion-stagger="70">
-      {
-        groups.map((g) => (
-          <section class="p-6" data-motion="reveal">
-            <div class="flex items-start gap-4">
-              <div class="border-border/70 bg-accent/10 text-accent mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border">
-                <g.icon class="h-7 w-7" />
-              </div>
-
-              <div class="min-w-0 flex-1">
-                <h2 class="text-lg font-semibold tracking-tight">{g.title}</h2>
-
-                <DividerList as="div" class="mt-4">
-                  {g.items.map((it) => (
-                    <details class="mg-list-item px-1 sm:px-2" data-motion-accordion>
-                      <summary class="focus-visible:ring-offset-bg hover:bg-surface/45 focus-visible:bg-surface/45 cursor-pointer list-none rounded-[calc(var(--radius)-6px)] px-2 py-1.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] focus-visible:ring-offset-2">
-                        <span class="inline-flex items-center gap-2">
-                          <span
-                            class="bg-accent mt-0.5 h-2 w-2 flex-none rounded-full"
-                            aria-hidden="true"
-                          />
-                          {it.q}
-                        </span>
-                      </summary>
-                      <div
-                        class="faq-answer mg-prose mt-2 px-2 text-sm leading-relaxed"
-                        set:html={renderMarkdown(it.a)}
-                      />
-                    </details>
-                  ))}
-                </DividerList>
-              </div>
+      {groups.map((g) => (
+        <section class="p-6" data-motion="reveal">
+          <div class="flex items-start gap-4">
+            <div class="border-border/70 bg-accent/10 text-accent mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border">
+              <g.icon class="h-7 w-7" />
             </div>
-          </section>
-        ))
-      }
+
+            <div class="min-w-0 flex-1">
+              <h2 class="text-lg font-semibold tracking-tight">{g.title}</h2>
+
+              <DividerList as="div" class="mt-4">
+                {g.items.map((it) => (
+                  <details class="mg-list-item px-1 sm:px-2" data-motion-accordion>
+                    <summary class="focus-visible:ring-offset-bg hover:bg-surface/45 focus-visible:bg-surface/45 cursor-pointer list-none rounded-[calc(var(--radius)-6px)] px-2 py-1.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)] focus-visible:ring-offset-2">
+                      <span class="inline-flex items-center gap-2">
+                        <span
+                          class="bg-accent mt-0.5 h-2 w-2 flex-none rounded-full"
+                          aria-hidden="true"
+                        />
+                        {it.q}
+                      </span>
+                    </summary>
+                    <div
+                      class="faq-answer mg-prose mt-2 px-2 text-sm leading-relaxed"
+                      set:html={renderMarkdown(it.a)}
+                    />
+                  </details>
+                ))}
+              </DividerList>
+            </div>
+          </div>
+        </section>
+      ))}
     </div>
 
     <div class="mt-8" data-motion="reveal" data-motion-delay="120">

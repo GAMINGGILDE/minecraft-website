@@ -37,7 +37,9 @@ const STATUS_URL = minecraftGilde.statusUrl;
               </h3>
             </div>
             <div class="home-live-player-meta">
-              <span class="home-live-player-count" data-mc-online>0</span>
+              <span class="home-live-player-count" data-mc-online>
+                0
+              </span>
               <span class="home-live-player-label">Spieler</span>
             </div>
           </div>
@@ -54,7 +56,8 @@ const STATUS_URL = minecraftGilde.statusUrl;
                 class="home-live-ping mg-status-dot"
                 aria-hidden="true"
                 data-live-indicator="mc-online"
-                data-status-state="loading"></span>
+                data-status-state="loading"
+              ></span>
               Live-Daten
             </span>
             <span class="inline-flex items-center gap-2">
@@ -86,7 +89,9 @@ const STATUS_URL = minecraftGilde.statusUrl;
                   <LiveState tileKey="mc-online" statusUrl={STATUS_URL} class="mt-2" />
                 </div>
               </div>
-              <span class="home-live-status-value" data-mc-online>0</span>
+              <span class="home-live-status-value" data-mc-online>
+                0
+              </span>
             </div>
 
             <div
@@ -106,7 +111,9 @@ const STATUS_URL = minecraftGilde.statusUrl;
                   <LiveState tileKey="discord-online" statusUrl={STATUS_URL} class="mt-2" />
                 </div>
               </div>
-              <span class="home-live-status-value" data-discord-online>0</span>
+              <span class="home-live-status-value" data-discord-online>
+                0
+              </span>
             </div>
           </section>
 
@@ -118,7 +125,10 @@ const STATUS_URL = minecraftGilde.statusUrl;
                 </p>
                 <p class="mt-2 text-base font-semibold">Aktiv seit Februar 2024</p>
                 <p class="text-muted mt-2 text-sm">
-                  Laufzeit: <span class="text-fg font-semibold" id="world-age">-</span>
+                  Laufzeit:{' '}
+                  <span class="text-fg font-semibold" id="world-age">
+                    -
+                  </span>
                 </p>
               </div>
               <Button

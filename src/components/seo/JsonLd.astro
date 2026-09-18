@@ -17,4 +17,4 @@ const json = JSON.stringify(data ?? null).replace(/</g, '\\u003c');
   Hinweis CSP: JSON-LD bleibt hier als nicht-ausfuehrender Inline-Block.
   Astro-Doku: https://docs.astro.build/en/reference/directives-reference/#sethtml
 -->
-<script type="application/ld+json" set:html={json} is:inline />
+<script type="application/ld+json" set:html={json} is:inline></script>

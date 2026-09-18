@@ -65,9 +65,7 @@ const SERVER_PORT = minecraftGilde.server.port;
                   Server-IP
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <code
-                    class="mg-text-accent-strong border-0 bg-transparent p-0 text-base font-semibold break-all sm:text-2xl"
-                  >
+                  <code class="mg-text-accent-strong border-0 bg-transparent p-0 text-base font-semibold break-all sm:text-2xl">
                     {SERVER_IP}
                   </code>
                   <button
@@ -107,14 +105,12 @@ const SERVER_PORT = minecraftGilde.server.port;
                 <p class="text-muted">
                   Port: <span class="text-fg font-semibold">{SERVER_PORT}</span>
                 </p>
-                <div
-                  class="border-border/70 bg-surface mt-2 flex items-start gap-2 rounded-lg border p-2"
-                >
+                <div class="border-border/70 bg-surface mt-2 flex items-start gap-2 rounded-lg border p-2">
                   <Info size={14} class="text-accent mt-0.5 shrink-0" />
                   <p class="text-muted text-xs">
-                    Meist reicht die Server-Adresse aus. Port <span class="text-fg font-medium"
-                      >{SERVER_PORT}</span
-                    > nur angeben, wenn dein Client es ausdrücklich verlangt.
+                    Meist reicht die Server-Adresse aus. Port{' '}
+                    <span class="text-fg font-medium">{SERVER_PORT}</span> nur angeben, wenn dein
+                    Client es ausdrücklich verlangt.
                   </p>
                 </div>
               </div>
@@ -127,11 +123,16 @@ const SERVER_PORT = minecraftGilde.server.port;
             <span
               class="mg-status-dot h-3 w-3 rounded-full"
               data-live-indicator="mc-online"
-              data-status-state="loading"></span>
+              data-status-state="loading"
+            ></span>
             <h3 class="text-base font-semibold sm:text-xl">Serverstatus</h3>
           </div>
           <p class="text-muted mt-3 text-sm sm:text-base">
-            Aktuell online: <span class="text-fg font-semibold" data-mc-online>0</span> Spieler
+            Aktuell online:{' '}
+            <span class="text-fg font-semibold" data-mc-online>
+              0
+            </span>{' '}
+            Spieler
           </p>
           <p class="text-muted mt-2 text-xs sm:text-sm" data-live-note-for="mc-online">
             Lade Live-Daten ...
@@ -140,7 +141,10 @@ const SERVER_PORT = minecraftGilde.server.port;
       </div>
 
       <footer class="mg-modal-footer text-right">
-        <Button type="button" variant="primary" data-join-modal-close> Verstanden </Button>
+        <Button type="button" variant="primary" data-join-modal-close>
+          {' '}
+          Verstanden{' '}
+        </Button>
       </footer>
     </section>
   </div>

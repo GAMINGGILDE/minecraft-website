@@ -25,8 +25,12 @@ const categories = commandsEntry.data.categories;
       <Button variant="primary" class="gap-2" data-copy-ip>
         <Download size={18} /> Jetzt Spielen
       </Button>
-      <Button href="/regeln" variant="secondary">Regeln</Button>
-      <Button href="/tutorial" variant="ghost">Tutorial</Button>
+      <Button href="/regeln" variant="secondary">
+        Regeln
+      </Button>
+      <Button href="/tutorial" variant="ghost">
+        Tutorial
+      </Button>
     </Fragment>
   </PageHeader>
 
@@ -55,39 +59,32 @@ const categories = commandsEntry.data.categories;
     </div>
 
     <div class="mt-4 space-y-3" data-motion-stagger="60">
-      {
-        categories.map((cat) => (
-          <details
-            class="mg-accordion mg-filter-transition"
-            open
-            data-category
-            data-motion="reveal"
-          >
-            <summary class="flex items-center justify-between gap-3">
-              <div class="inline-flex items-center gap-2">
-                <SquareTerminal size={18} />
-                <span class="text-sm font-semibold">{cat.name}</span>
-              </div>
-              <span class="text-muted text-xs">{cat.commands.length} Befehle</span>
-            </summary>
+      {categories.map((cat) => (
+        <details class="mg-accordion mg-filter-transition" open data-category data-motion="reveal">
+          <summary class="flex items-center justify-between gap-3">
+            <div class="inline-flex items-center gap-2">
+              <SquareTerminal size={18} />
+              <span class="text-sm font-semibold">{cat.name}</span>
+            </div>
+            <span class="text-muted text-xs">{cat.commands.length} Befehle</span>
+          </summary>
 
-            <DividerList as="div" class="mt-3">
-              {cat.commands.map((cmd) => (
-                <div
-                  class="mg-list-item mg-filter-transition"
-                  data-command
-                  data-search={`${cmd.command} ${cmd.description}`}
-                >
-                  <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <code class="text-fg font-mono text-sm">{cmd.command}</code>
-                    <p class="text-muted text-sm">{cmd.description}</p>
-                  </div>
+          <DividerList as="div" class="mt-3">
+            {cat.commands.map((cmd) => (
+              <div
+                class="mg-list-item mg-filter-transition"
+                data-command
+                data-search={`${cmd.command} ${cmd.description}`}
+              >
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <code class="text-fg font-mono text-sm">{cmd.command}</code>
+                  <p class="text-muted text-sm">{cmd.description}</p>
                 </div>
-              ))}
-            </DividerList>
-          </details>
-        ))
-      }
+              </div>
+            ))}
+          </DividerList>
+        </details>
+      ))}
     </div>
   </section>
 
