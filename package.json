@@ -42,7 +42,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
     "@astrojs/cloudflare": "^14.0.0",
-    "@astrojs/react": "^6.0.0",
+    "@astrojs/react": "^7.0.0",
     "@astrojs/sitemap": "^3.5.0",
     "@eslint/js": "^10.0.0",
     "@playwright/test": "^1.58.2",
