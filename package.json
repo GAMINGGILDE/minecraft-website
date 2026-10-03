@@ -9,7 +9,7 @@
   },
   "author": "Christian Falkner",
   "license": "MIT",
-  "packageManager": "npm@12.1.0",
+  "packageManager": "npm@12.2.0",
   "engines": {
     "node": "^24.16.0"
   },
